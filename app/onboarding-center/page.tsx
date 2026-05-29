@@ -1,10 +1,10 @@
-import { WorkspacePlaceholder } from "@/components/dashboard/workspace-placeholder";
+import { OnboardingCenter } from "@/components/dashboard/onboarding-center";
 import { AppShell } from "@/components/layout/app-shell";
 
 export default function OnboardingCenterPage() {
   return (
     <AppShell>
-      <WorkspacePlaceholder title="Onboarding Center" />
+      <OnboardingCenter />
     </AppShell>
   );
 }

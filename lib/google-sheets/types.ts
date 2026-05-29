@@ -31,3 +31,23 @@ export type ExecutiveAccountsResponse = {
     }>;
   };
 };
+
+export type OnboardingRow = {
+  account: string;
+  accountId: string;
+  currentStep: string;
+  daysInProgress: number;
+  expectedConclusionDate: string;
+  id: string;
+  nextAction: string;
+  progress: number;
+  risk: "Alto" | "Baixo" | "Medio";
+  startDate: string;
+  status: string;
+  timeToValue: number;
+};
+
+export type OnboardingsResponse = {
+  onboardings: OnboardingRow[];
+  source: "google-sheets" | "not-configured";
+};
