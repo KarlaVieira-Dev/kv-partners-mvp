@@ -51,3 +51,25 @@ export type OnboardingsResponse = {
   onboardings: OnboardingRow[];
   source: "google-sheets" | "not-configured";
 };
+
+export type RiskRow = {
+  accessScore: number;
+  accountId: string;
+  accountName: string;
+  accountStatus: string;
+  accountType: string;
+  feedbackScore: number;
+  healthLevel: string;
+  healthScore: number;
+  mainReason: string;
+  onboardingScore: number;
+  riskLevel: string;
+  riskScore: number;
+  suggestedAction: string;
+  usageScore: number;
+};
+
+export type RisksResponse = {
+  risks: RiskRow[];
+  source: "google-sheets" | "not-configured";
+};
