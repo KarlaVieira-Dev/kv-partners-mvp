@@ -6,7 +6,7 @@ const normalizeHeader = (header: string) =>
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 
-export function parseCsv(csv: string) {
+const parseCsvRows = (csv: string) => {
   const rows: string[][] = [];
   let currentRow: string[] = [];
   let currentCell = "";
@@ -53,14 +53,30 @@ export function parseCsv(csv: string) {
     rows.push(currentRow);
   }
 
+  return rows;
+};
+
+export function parseCsvWithMetadata(csv: string) {
+  const rows = parseCsvRows(csv);
   const [headers = [], ...dataRows] = rows.filter((row) =>
     row.some((cell) => cell.trim()),
   );
 
-  return dataRows.map((row) =>
+  const normalizedHeaders = headers.map(normalizeHeader);
+  const records = dataRows.map((row) =>
     headers.reduce<Record<string, string>>((record, header, index) => {
       record[normalizeHeader(header)] = row[index]?.trim() ?? "";
       return record;
     }, {}),
   );
+
+  return {
+    headers,
+    normalizedHeaders,
+    records,
+  };
+}
+
+export function parseCsv(csv: string) {
+  return parseCsvWithMetadata(csv).records;
 }

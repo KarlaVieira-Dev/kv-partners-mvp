@@ -1,4 +1,4 @@
-import { parseCsv } from "@/lib/google-sheets/csv";
+import { parseCsvWithMetadata } from "@/lib/google-sheets/csv";
 import type {
   ExecutiveAccountRow,
   ExecutiveAccountsResponse,
@@ -12,6 +12,7 @@ export const productIntelligenceModules = [
 ];
 
 const executiveSheets = {
+  accounts: "01_Contas",
   ioiScores: "07_IOI_Scores",
   mgiInsights: "09_MGI_Insights",
   mgiRecommendations: "10_MGI_Recommendations",
@@ -19,7 +20,15 @@ const executiveSheets = {
 
 type SheetRow = Record<string, string>;
 
+type SheetReadDebug = NonNullable<ExecutiveAccountsResponse["debug"]>["sheets"][number];
+
+type SheetReadResult = {
+  debug: SheetReadDebug;
+  rows: SheetRow[];
+};
+
 type AccountAccumulator = {
+  id: string;
   account: string;
   type: string;
   status: string;
@@ -44,8 +53,19 @@ const getCell = (row: SheetRow, keys: string[]) => {
   return "";
 };
 
+const getAccountId = (row: SheetRow) =>
+  getCell(row, [
+    "id conta",
+    "account id",
+    "id account",
+    "id cliente",
+    "cliente id",
+    "id",
+  ]);
+
 const getAccountName = (row: SheetRow) =>
   getCell(row, [
+    "nome conta",
     "conta",
     "account",
     "cliente",
@@ -57,15 +77,30 @@ const getAccountName = (row: SheetRow) =>
   ]);
 
 const getAccountType = (row: SheetRow) =>
-  getCell(row, ["tipo", "type", "segmento", "segment", "categoria"]);
+  getCell(row, [
+    "tipo conta",
+    "tipo",
+    "type",
+    "segmento",
+    "segment",
+    "categoria",
+  ]);
 
 const getStatus = (row: SheetRow) =>
-  getCell(row, ["status", "situacao", "stage", "etapa"]);
+  getCell(row, [
+    "status conta",
+    "status",
+    "situacao",
+    "stage",
+    "etapa",
+  ]);
 
 const getHealthScore = (row: SheetRow) =>
   toNumber(
     getCell(row, [
       "health score",
+      "health_score",
+      "healthscore",
       "health",
       "ioi score",
       "score ioi",
@@ -79,6 +114,8 @@ const getRiskScore = (row: SheetRow) =>
   toNumber(
     getCell(row, [
       "risk score",
+      "risk_score",
+      "riskscore",
       "risk",
       "risco",
       "score risco",
@@ -90,6 +127,8 @@ const getRiskScore = (row: SheetRow) =>
 const getInsightText = (row: SheetRow) =>
   getCell(row, [
     "motivo principal",
+    "motivo_principal",
+    "motivoprincipal",
     "insight",
     "insight principal",
     "mgi insight",
@@ -103,6 +142,8 @@ const getInsightText = (row: SheetRow) =>
 const getRecommendationText = (row: SheetRow) =>
   getCell(row, [
     "acao sugerida",
+    "acao_sugerida",
+    "acaosugerida",
     "recommendation",
     "recomendacao",
     "mgi recommendation",
@@ -134,81 +175,202 @@ const deriveStatus = (account: AccountAccumulator) => {
 };
 
 const upsertAccount = (
-  accountsByName: Map<string, AccountAccumulator>,
-  accountName: string,
+  accountsByKey: Map<string, AccountAccumulator>,
+  aliases: Map<string, string>,
+  row: SheetRow,
 ) => {
-  const existing = accountsByName.get(accountName);
+  const accountId = getAccountId(row);
+  const accountName = getAccountName(row);
+  const lookupKeys = [accountId, accountName].filter(Boolean);
 
-  if (existing) {
-    return existing;
+  for (const lookupKey of lookupKeys) {
+    const canonicalKey = aliases.get(lookupKey) ?? lookupKey;
+    const existing = accountsByKey.get(canonicalKey);
+
+    if (existing) {
+      return existing;
+    }
   }
 
+  if (!accountName && !accountId) {
+    return null;
+  }
+
+  const canonicalKey = accountId || accountName;
   const account: AccountAccumulator = {
-    account: accountName,
+    id: accountId,
+    account: accountName || accountId,
     type: "",
     status: "",
     mainReason: "",
     suggestedAction: "",
   };
 
-  accountsByName.set(accountName, account);
+  accountsByKey.set(canonicalKey, account);
+
+  for (const lookupKey of lookupKeys) {
+    aliases.set(lookupKey, canonicalKey);
+  }
+
   return account;
+};
+
+const findAccount = (
+  accountsByKey: Map<string, AccountAccumulator>,
+  aliases: Map<string, string>,
+  row: SheetRow,
+) => {
+  const lookupKeys = [getAccountId(row), getAccountName(row)].filter(Boolean);
+
+  for (const lookupKey of lookupKeys) {
+    const canonicalKey = aliases.get(lookupKey) ?? lookupKey;
+    const account = accountsByKey.get(canonicalKey);
+
+    if (account) {
+      return account;
+    }
+  }
+
+  return null;
+};
+
+const applyPrimaryAccounts = (
+  accountsByKey: Map<string, AccountAccumulator>,
+  aliases: Map<string, string>,
+  rows: SheetRow[],
+) => {
+  for (const row of rows) {
+    const account = upsertAccount(accountsByKey, aliases, row);
+    const healthScore = getHealthScore(row);
+
+    if (!account) {
+      continue;
+    }
+
+    account.type = getAccountType(row) || account.type;
+    account.status = getStatus(row) || account.status;
+
+    if (healthScore !== undefined) {
+      account.healthScore = healthScore;
+    }
+  }
 };
 
 const spreadsheetId = () =>
   process.env.GOOGLE_SHEETS_SPREADSHEET_ID ??
   process.env.GOOGLE_SHEETS_ACCOUNTS_SPREADSHEET_ID ??
-  process.env.GOOGLE_SHEETS_EXECUTIVE_CENTER_SPREADSHEET_ID;
+  process.env.GOOGLE_SHEETS_EXECUTIVE_CENTER_SPREADSHEET_ID ??
+  "1mM_S-RA7TBK6MC04evhv_U9Y31J0izmsgIhPpn8hBUg";
 
-const buildGoogleSheetsCsvUrl = (sheetName: string) => {
+const buildGoogleSheetsCsvUrl = ({
+  gid,
+  sheetName,
+}: {
+  gid?: string;
+  sheetName?: string;
+}) => {
   const id = spreadsheetId();
 
   if (!id) {
     return null;
   }
 
-  const params = new URLSearchParams({
+  if (gid) {
+    const params = new URLSearchParams({ format: "csv", gid });
+    return `https://docs.google.com/spreadsheets/d/${id}/export?${params.toString()}`;
+  }
+
+  if (sheetName) {
+    const params = new URLSearchParams({
+      sheet: sheetName,
+      tqx: "out:csv",
+    });
+
+    return `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?${params.toString()}`;
+  }
+
+  return null;
+};
+
+const readSheet = async (
+  sheetName: string,
+  attempts: Array<{ gid?: string; sheetName?: string }>,
+): Promise<SheetReadResult> => {
+  const debug: SheetReadDebug = {
     sheet: sheetName,
-    tqx: "out:csv",
-  });
+    attempts: [],
+  };
 
-  return `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?${params.toString()}`;
-};
+  for (const attempt of attempts) {
+    const csvUrl = buildGoogleSheetsCsvUrl(attempt);
 
-const readSheet = async (sheetName: string) => {
-  const csvUrl = buildGoogleSheetsCsvUrl(sheetName);
-
-  if (!csvUrl) {
-    return [];
-  }
-
-  const response = await fetch(csvUrl, {
-    next: { revalidate: 300 },
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Google Sheets tab ${sheetName} responded with ${response.status}`,
-    );
-  }
-
-  return parseCsv(await response.text());
-};
-
-const applyIoiScores = (
-  accountsByName: Map<string, AccountAccumulator>,
-  rows: SheetRow[],
-) => {
-  for (const row of rows) {
-    const accountName = getAccountName(row);
-
-    if (!accountName) {
+    if (!csvUrl) {
       continue;
     }
 
-    const account = upsertAccount(accountsByName, accountName);
+    try {
+      const response = await fetch(csvUrl, {
+        next: { revalidate: 300 },
+      });
+
+      if (!response.ok) {
+        debug.attempts.push({
+          error: `HTTP ${response.status}`,
+          headers: [],
+          normalizedHeaders: [],
+          rowCount: 0,
+          status: response.status,
+          url: csvUrl,
+        });
+        continue;
+      }
+
+      const parsed = parseCsvWithMetadata(await response.text());
+
+      debug.attempts.push({
+        headers: parsed.headers,
+        normalizedHeaders: parsed.normalizedHeaders,
+        rowCount: parsed.records.length,
+        status: response.status,
+        url: csvUrl,
+      });
+
+      if (parsed.records.length > 0) {
+        return {
+          debug,
+          rows: parsed.records,
+        };
+      }
+    } catch (error) {
+      debug.attempts.push({
+        error: error instanceof Error ? error.message : "Unknown fetch error",
+        headers: [],
+        normalizedHeaders: [],
+        rowCount: 0,
+        url: csvUrl,
+      });
+    }
+  }
+
+  return {
+    debug,
+    rows: [],
+  };
+};
+
+const applyIoiScores = (
+  accountsByKey: Map<string, AccountAccumulator>,
+  aliases: Map<string, string>,
+  rows: SheetRow[],
+) => {
+  for (const row of rows) {
+    const account = findAccount(accountsByKey, aliases, row);
     const healthScore = getHealthScore(row);
     const riskScore = getRiskScore(row);
+
+    if (!account) {
+      continue;
+    }
 
     account.type ||= getAccountType(row);
     account.status ||= getStatus(row);
@@ -224,19 +386,18 @@ const applyIoiScores = (
 };
 
 const applyMgiInsights = (
-  accountsByName: Map<string, AccountAccumulator>,
+  accountsByKey: Map<string, AccountAccumulator>,
+  aliases: Map<string, string>,
   rows: SheetRow[],
 ) => {
   for (const row of rows) {
-    const accountName = getAccountName(row);
-
-    if (!accountName) {
-      continue;
-    }
-
-    const account = upsertAccount(accountsByName, accountName);
+    const account = findAccount(accountsByKey, aliases, row);
     const insight = getInsightText(row);
     const riskScore = getRiskScore(row);
+
+    if (!account) {
+      continue;
+    }
 
     account.type ||= getAccountType(row);
     account.status ||= getStatus(row);
@@ -249,18 +410,17 @@ const applyMgiInsights = (
 };
 
 const applyMgiRecommendations = (
-  accountsByName: Map<string, AccountAccumulator>,
+  accountsByKey: Map<string, AccountAccumulator>,
+  aliases: Map<string, string>,
   rows: SheetRow[],
 ) => {
   for (const row of rows) {
-    const accountName = getAccountName(row);
+    const account = findAccount(accountsByKey, aliases, row);
+    const recommendation = getRecommendationText(row);
 
-    if (!accountName) {
+    if (!account) {
       continue;
     }
-
-    const account = upsertAccount(accountsByName, accountName);
-    const recommendation = getRecommendationText(row);
 
     account.type ||= getAccountType(row);
     account.status ||= getStatus(row);
@@ -294,30 +454,44 @@ export async function getExecutiveAccountsFromSheets(): Promise<ExecutiveAccount
     };
   }
 
-  try {
-    const [ioiScores, mgiInsights, mgiRecommendations] = await Promise.all([
-      readSheet(executiveSheets.ioiScores),
-      readSheet(executiveSheets.mgiInsights),
-      readSheet(executiveSheets.mgiRecommendations),
+  const [accountsSheet, ioiScoresSheet, mgiInsightsSheet, recommendationsSheet] =
+    await Promise.all([
+      readSheet(executiveSheets.accounts, [
+        { gid: "0" },
+        { sheetName: executiveSheets.accounts },
+      ]),
+      readSheet(executiveSheets.ioiScores, [
+        { sheetName: executiveSheets.ioiScores },
+      ]),
+      readSheet(executiveSheets.mgiInsights, [
+        { sheetName: executiveSheets.mgiInsights },
+      ]),
+      readSheet(executiveSheets.mgiRecommendations, [
+        { sheetName: executiveSheets.mgiRecommendations },
+      ]),
     ]);
-    const accountsByName = new Map<string, AccountAccumulator>();
+  const accountsByKey = new Map<string, AccountAccumulator>();
+  const aliases = new Map<string, string>();
 
-    applyIoiScores(accountsByName, ioiScores);
-    applyMgiInsights(accountsByName, mgiInsights);
-    applyMgiRecommendations(accountsByName, mgiRecommendations);
+  applyPrimaryAccounts(accountsByKey, aliases, accountsSheet.rows);
+  applyIoiScores(accountsByKey, aliases, ioiScoresSheet.rows);
+  applyMgiInsights(accountsByKey, aliases, mgiInsightsSheet.rows);
+  applyMgiRecommendations(accountsByKey, aliases, recommendationsSheet.rows);
 
-    return {
-      accounts: Array.from(accountsByName.values()).map(toExecutiveAccount),
-      source: "google-sheets",
-      modules: productIntelligenceModules,
-    };
-  } catch (error) {
-    console.error("Failed to read KV Partners Google Sheets modules", error);
+  const accounts = Array.from(accountsByKey.values()).map(toExecutiveAccount);
+  const debug = {
+    sheets: [
+      accountsSheet.debug,
+      ioiScoresSheet.debug,
+      mgiInsightsSheet.debug,
+      recommendationsSheet.debug,
+    ],
+  };
 
-    return {
-      accounts: [],
-      source: "not-configured",
-      modules: productIntelligenceModules,
-    };
-  }
+  return {
+    accounts,
+    ...(accounts.length === 0 ? { debug } : {}),
+    source: "google-sheets",
+    modules: productIntelligenceModules,
+  };
 }

@@ -12,4 +12,17 @@ export type ExecutiveAccountsResponse = {
   accounts: ExecutiveAccountRow[];
   source: "google-sheets" | "not-configured";
   modules: string[];
+  debug?: {
+    sheets: Array<{
+      sheet: string;
+      attempts: Array<{
+        error?: string;
+        headers: string[];
+        normalizedHeaders: string[];
+        rowCount: number;
+        status?: number;
+        url: string;
+      }>;
+    }>;
+  };
 };
