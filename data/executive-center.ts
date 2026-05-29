@@ -10,57 +10,93 @@ export const navigationItems = [
 
 export const executiveMetrics = [
   {
-    label: "Pipeline Health",
-    value: "86%",
-    trend: "+8.4%",
-    detail: "Account motions on track",
+    label: "Health Score Médio",
+    value: "82",
+    trend: "+4 pts",
+    detail: "Média das contas monitoradas pelo ecossistema",
   },
   {
-    label: "Active Accounts",
-    value: "42",
-    trend: "+6",
-    detail: "Enterprise and strategic",
+    label: "Contas Monitoradas",
+    value: "5",
+    trend: "4 módulos",
+    detail: "Account Onboarding, Feedback, Identity e Growth",
   },
   {
-    label: "Risk Exposure",
-    value: "12%",
-    trend: "-3.1%",
-    detail: "Weighted by revenue impact",
+    label: "Contas em Risco",
+    value: "2",
+    trend: "Risk 70+",
+    detail: "Contas com fricção operacional ou onboarding incompleto",
   },
   {
-    label: "Expansion Signal",
-    value: "$1.8M",
-    trend: "+14%",
-    detail: "Qualified growth potential",
+    label: "Opportunity Score",
+    value: "78",
+    trend: "+9 pts",
+    detail: "Potencial de expansão identificado por sinais combinados",
   },
 ];
 
 export const focusAccounts = [
   {
-    name: "Atlas Cloud",
-    stage: "Onboarding",
-    owner: "Karla Vieira",
-    health: "Strong",
-    score: 92,
+    name: "Grupo Orion",
+    type: "Enterprise",
+    status: "Onboarding incompleto",
+    healthScore: 76,
+    riskScore: 72,
+    mainReason: "Pendências de acesso em Identity & Onboarding Intelligence",
+    suggestedAction: "Priorizar revisão de permissões e owners críticos",
   },
   {
-    name: "Northstar Pay",
-    stage: "Growth",
-    owner: "Customer Team",
-    health: "Watch",
-    score: 74,
+    name: "Clínica Alfa",
+    type: "Healthcare",
+    status: "Risco operacional",
+    healthScore: 64,
+    riskScore: 81,
+    mainReason: "Feedbacks negativos sobre configuração de permissões",
+    suggestedAction: "Acionar plano de correção com Account Onboarding",
   },
   {
-    name: "Luma Capital",
-    stage: "Risk Review",
-    owner: "AI Copilot",
-    health: "Needs action",
-    score: 61,
+    name: "Educa Prime",
+    type: "Education",
+    status: "Expansão potencial",
+    healthScore: 91,
+    riskScore: 28,
+    mainReason: "Uso consistente e feedbacks positivos recorrentes",
+    suggestedAction: "Abrir discovery de Market & Growth Intelligence",
+  },
+  {
+    name: "TechFlow",
+    type: "SaaS",
+    status: "Monitoramento ativo",
+    healthScore: 84,
+    riskScore: 39,
+    mainReason: "Onboarding avançado com baixa fricção operacional",
+    suggestedAction: "Manter cadência executiva quinzenal",
+  },
+  {
+    name: "Rede Horizonte",
+    type: "Retail",
+    status: "Atenção",
+    healthScore: 71,
+    riskScore: 66,
+    mainReason: "Sinais mistos entre adoção e feedback operacional",
+    suggestedAction: "Consolidar feedbacks e revisar jornada de onboarding",
   },
 ];
 
 export const intelligenceSignals = [
-  "Three onboarding accounts need executive sponsor alignment this week.",
-  "Feedback Center detected repeated friction around implementation timelines.",
-  "AI Copilot recommends prioritizing Atlas Cloud expansion discovery.",
+  "Contas com onboarding incompleto apresentam maior risco operacional.",
+  "Feedbacks negativos recorrentes indicam fricção na configuração de permissões.",
+  "Contas com Health Score elevado possuem potencial de expansão.",
 ];
+
+export const ecosystemModules = [
+  "Account Onboarding",
+  "Feedback Intelligence",
+  "Identity & Onboarding Intelligence",
+  "Market & Growth Intelligence",
+];
+
+export const executiveSummary = {
+  averageRiskScore: 57,
+  priorityRecommendations: 4,
+};
