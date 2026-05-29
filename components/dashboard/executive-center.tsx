@@ -1,12 +1,16 @@
+"use client";
+
 import { ArrowUpRight, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   ecosystemModules,
-  executiveMetrics,
-  executiveSummary,
-  focusAccounts,
   intelligenceSignals,
 } from "@/data/executive-center";
+import type {
+  ExecutiveAccountRow,
+  ExecutiveAccountsResponse,
+} from "@/lib/google-sheets/types";
 import { cn } from "@/lib/utils";
 
 const riskColor = (score: number) => {
@@ -33,7 +37,88 @@ const healthColor = (score: number) => {
   return "bg-rose-50 text-rose-700";
 };
 
+const average = (values: number[]) => {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  return Math.round(
+    values.reduce((total, value) => total + value, 0) / values.length,
+  );
+};
+
 export function ExecutiveCenter() {
+  const [accounts, setAccounts] = useState<ExecutiveAccountRow[]>([]);
+  const [modules, setModules] = useState(ecosystemModules);
+  const [source, setSource] =
+    useState<ExecutiveAccountsResponse["source"]>("not-configured");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadExecutiveAccounts() {
+      try {
+        const response = await fetch("/api/accounts");
+        const data = (await response.json()) as ExecutiveAccountsResponse;
+
+        setAccounts(data.accounts);
+        setModules(data.modules);
+        setSource(data.source);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadExecutiveAccounts();
+  }, []);
+
+  const metrics = useMemo(() => {
+    const highRiskAccounts = accounts.filter(
+      (account) => account.riskScore >= 70,
+    );
+    const priorityRecommendations = accounts.filter(
+      (account) => account.suggestedAction,
+    );
+
+    return [
+      {
+        label: "Health Score Medio",
+        value: average(accounts.map((account) => account.healthScore)),
+        trend: `${accounts.length} contas`,
+        detail: "Media calculada a partir das contas vindas do Google Sheets",
+      },
+      {
+        label: "Risk Score Medio",
+        value: average(accounts.map((account) => account.riskScore)),
+        trend: "Risk model",
+        detail: "Risco operacional consolidado por conta monitorada",
+      },
+      {
+        label: "Contas em Risco",
+        value: highRiskAccounts.length,
+        trend: "Risk 70+",
+        detail: "Contas com maior chance de friccao operacional",
+      },
+      {
+        label: "Recomendacoes Prioritarias",
+        value: priorityRecommendations.length,
+        trend: "Acoes",
+        detail: "Acoes sugeridas para onboarding, identidade e crescimento",
+      },
+    ];
+  }, [accounts]);
+
+  const prioritizedAccounts = useMemo(
+    () =>
+      [...accounts].sort((first, second) => {
+        if (second.riskScore !== first.riskScore) {
+          return second.riskScore - first.riskScore;
+        }
+
+        return first.healthScore - second.healthScore;
+      }),
+    [accounts],
+  );
+
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
       <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
@@ -52,11 +137,11 @@ export function ExecutiveCenter() {
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
             <Sparkles className="size-4 text-zinc-950" />
-            Product intelligence active
+            {source === "google-sheets" ? "Google Sheets active" : "Sheet ready"}
           </div>
         </div>
         <div className="mt-5 flex flex-wrap gap-2">
-          {ecosystemModules.map((module) => (
+          {modules.map((module) => (
             <span
               className="rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-600"
               key={module}
@@ -68,7 +153,7 @@ export function ExecutiveCenter() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {executiveMetrics.map((metric) => (
+        {metrics.map((metric) => (
           <article
             className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm"
             key={metric.label}
@@ -82,7 +167,7 @@ export function ExecutiveCenter() {
               </span>
             </div>
             <p className="mt-4 text-3xl font-semibold tracking-tight text-zinc-950">
-              {metric.value}
+              {isLoading ? "..." : metric.value}
             </p>
             <p className="mt-2 text-sm text-zinc-500">{metric.detail}</p>
           </article>
@@ -93,7 +178,7 @@ export function ExecutiveCenter() {
         <div className="rounded-lg border border-zinc-200 bg-white shadow-sm">
           <div className="border-b border-zinc-200 px-5 py-4">
             <h2 className="text-base font-semibold text-zinc-950">
-              Contas Prioritárias
+              Contas Prioritarias
             </h2>
           </div>
           <div className="overflow-x-auto">
@@ -106,45 +191,48 @@ export function ExecutiveCenter() {
                   <th className="px-5 py-3">Health</th>
                   <th className="px-5 py-3">Risk</th>
                   <th className="px-5 py-3">Motivo principal</th>
-                  <th className="px-5 py-3">Ação sugerida</th>
+                  <th className="px-5 py-3">Acao sugerida</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-            {focusAccounts.map((account) => (
-              <tr className="align-top text-sm text-zinc-600" key={account.name}>
-                <td className="px-5 py-4 font-medium text-zinc-950">
-                  {account.name}
-                </td>
-                <td className="px-5 py-4">{account.type}</td>
-                <td className="px-5 py-4">{account.status}</td>
-                <td className="px-5 py-4">
-                  <span
-                    className={cn(
-                      "rounded-md px-2 py-1 text-xs font-medium",
-                      healthColor(account.healthScore),
-                    )}
+                {prioritizedAccounts.map((account) => (
+                  <tr
+                    className="align-top text-sm text-zinc-600"
+                    key={account.account}
                   >
-                    {account.healthScore}
-                  </span>
-                </td>
-                <td className="px-5 py-4">
-                  <span
-                    className={cn(
-                      "rounded-md px-2 py-1 text-xs font-medium",
-                      riskColor(account.riskScore),
-                    )}
-                  >
-                    {account.riskScore}
-                  </span>
-                </td>
-                <td className="max-w-[240px] px-5 py-4 leading-6">
-                  {account.mainReason}
-                </td>
-                <td className="max-w-[240px] px-5 py-4 leading-6">
-                  {account.suggestedAction}
-                </td>
-              </tr>
-            ))}
+                    <td className="px-5 py-4 font-medium text-zinc-950">
+                      {account.account}
+                    </td>
+                    <td className="px-5 py-4">{account.type}</td>
+                    <td className="px-5 py-4">{account.status}</td>
+                    <td className="px-5 py-4">
+                      <span
+                        className={cn(
+                          "rounded-md px-2 py-1 text-xs font-medium",
+                          healthColor(account.healthScore),
+                        )}
+                      >
+                        {account.healthScore}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span
+                        className={cn(
+                          "rounded-md px-2 py-1 text-xs font-medium",
+                          riskColor(account.riskScore),
+                        )}
+                      >
+                        {account.riskScore}
+                      </span>
+                    </td>
+                    <td className="max-w-[240px] px-5 py-4 leading-6">
+                      {account.mainReason}
+                    </td>
+                    <td className="max-w-[240px] px-5 py-4 leading-6">
+                      {account.suggestedAction}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -157,18 +245,14 @@ export function ExecutiveCenter() {
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="rounded-lg border border-white/10 bg-white/[0.06] p-3">
-              <p className="text-xs text-zinc-400">Risk Score Médio</p>
-              <p className="mt-1 text-2xl font-semibold">
-                {executiveSummary.averageRiskScore}
+              <p className="text-xs text-zinc-400">Origem dos dados</p>
+              <p className="mt-1 text-sm font-semibold">
+                {source === "google-sheets" ? "Google Sheets" : "Sheet pending"}
               </p>
             </div>
             <div className="rounded-lg border border-white/10 bg-white/[0.06] p-3">
-              <p className="text-xs text-zinc-400">
-                Recomendações Prioritárias
-              </p>
-              <p className="mt-1 text-2xl font-semibold">
-                {executiveSummary.priorityRecommendations}
-              </p>
+              <p className="text-xs text-zinc-400">Contas lidas</p>
+              <p className="mt-1 text-2xl font-semibold">{accounts.length}</p>
             </div>
           </div>
           <div className="mt-5 space-y-3">
