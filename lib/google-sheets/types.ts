@@ -1,9 +1,14 @@
 export type ExecutiveAccountRow = {
   account: string;
+  city?: string;
   type: string;
+  plan?: string;
+  segment?: string;
   healthScore: number;
   riskScore: number;
+  state?: string;
   status: string;
+  size?: string;
   mainReason: string;
   suggestedAction: string;
 };

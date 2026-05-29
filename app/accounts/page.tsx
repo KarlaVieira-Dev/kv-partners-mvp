@@ -1,10 +1,10 @@
-import { WorkspacePlaceholder } from "@/components/dashboard/workspace-placeholder";
+import { AccountsCenter } from "@/components/dashboard/accounts-center";
 import { AppShell } from "@/components/layout/app-shell";
 
 export default function AccountsPage() {
   return (
     <AppShell>
-      <WorkspacePlaceholder title="Accounts" />
+      <AccountsCenter />
     </AppShell>
   );
 }

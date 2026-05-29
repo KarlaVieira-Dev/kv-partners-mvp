@@ -30,8 +30,13 @@ type SheetReadResult = {
 type AccountAccumulator = {
   id: string;
   account: string;
+  city: string;
   type: string;
+  plan: string;
+  segment: string;
   status: string;
+  state: string;
+  size: string;
   healthScore?: number;
   riskScore?: number;
   mainReason: string;
@@ -86,6 +91,12 @@ const getAccountType = (row: SheetRow) =>
     "categoria",
   ]);
 
+const getSegment = (row: SheetRow) =>
+  getCell(row, ["segmento", "segment"]);
+
+const getSize = (row: SheetRow) =>
+  getCell(row, ["porte", "size", "company size"]);
+
 const getStatus = (row: SheetRow) =>
   getCell(row, [
     "status conta",
@@ -94,6 +105,12 @@ const getStatus = (row: SheetRow) =>
     "stage",
     "etapa",
   ]);
+
+const getPlan = (row: SheetRow) => getCell(row, ["plano", "plan"]);
+
+const getCity = (row: SheetRow) => getCell(row, ["cidade", "city"]);
+
+const getState = (row: SheetRow) => getCell(row, ["estado", "state", "uf"]);
 
 const getHealthScore = (row: SheetRow) =>
   toNumber(
@@ -200,8 +217,13 @@ const upsertAccount = (
   const account: AccountAccumulator = {
     id: accountId,
     account: accountName || accountId,
+    city: "",
     type: "",
+    plan: "",
+    segment: "",
     status: "",
+    state: "",
+    size: "",
     mainReason: "",
     suggestedAction: "",
   };
@@ -248,7 +270,12 @@ const applyPrimaryAccounts = (
     }
 
     account.type = getAccountType(row) || account.type;
+    account.segment = getSegment(row) || account.segment;
+    account.size = getSize(row) || account.size;
     account.status = getStatus(row) || account.status;
+    account.plan = getPlan(row) || account.plan;
+    account.city = getCity(row) || account.city;
+    account.state = getState(row) || account.state;
 
     if (healthScore !== undefined) {
       account.healthScore = healthScore;
@@ -436,10 +463,15 @@ const toExecutiveAccount = (
 
   return {
     account: account.account,
+    city: account.city,
     type: account.type || "Conta",
+    plan: account.plan,
+    segment: account.segment,
     healthScore,
     riskScore,
+    state: account.state,
     status: deriveStatus({ ...account, healthScore, riskScore }),
+    size: account.size,
     mainReason: account.mainReason || "Sem insight registrado",
     suggestedAction: account.suggestedAction || "Sem recomendacao registrada",
   };
