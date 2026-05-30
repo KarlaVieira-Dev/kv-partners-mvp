@@ -154,6 +154,7 @@ export type GrowthBenchmarkRow = {
   kvValue: string;
   marketValue: string;
   metric: string;
+  observation: string;
   priority: string;
 };
 

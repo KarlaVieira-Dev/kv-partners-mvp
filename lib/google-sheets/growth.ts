@@ -63,6 +63,18 @@ const readOptionalSheet = async (sheetName: string) => {
   }
 };
 
+const readFirstAvailableSheet = async (sheetNames: string[]) => {
+  for (const sheetName of sheetNames) {
+    const rows = await readOptionalSheet(sheetName);
+
+    if (rows.length > 0) {
+      return rows;
+    }
+  }
+
+  return [];
+};
+
 const buildAccountNames = (accounts: SheetRow[]) =>
   new Map(
     accounts.map((account) => [
@@ -190,7 +202,7 @@ export async function getGrowthFromSheets(): Promise<GrowthResponse> {
         readSheet("10_MGI_Recommendations"),
         readOptionalSheet("11_MGI_Market_Trends"),
         readOptionalSheet("12_MGI_Competitive_Radar"),
-        readOptionalSheet("13_MGI_Benchmarks"),
+        readFirstAvailableSheet(["13_MGI_Benchmark", "13_MGI_Benchmarks"]),
       ]);
     const accountNames = buildAccountNames(accounts);
     const categoryAccounts = buildCategoryAccounts(jtbdRows, accountNames);
@@ -271,31 +283,18 @@ export async function getGrowthFromSheets(): Promise<GrowthResponse> {
 
     const benchmarks: GrowthBenchmarkRow[] = benchmarkRows.map(
       (row, index) => ({
-        category: getCell(row, ["categoria", "categoria benchmark"]),
-        comparativeStatus: getCell(row, [
-          "status comparativo",
-          "comparativo",
-          "status",
-        ]),
-        difference: getCell(row, ["diferenca", "diferença", "gap"]),
+        category: getCell(row, ["categoria"]),
+        comparativeStatus: getCell(row, ["status comparativo"]),
+        difference: getCell(row, ["diferenca"]),
         id:
-          getCell(row, ["id benchmark", "id metrica", "id benchmark metric"]) ||
+          getCell(row, ["id benchmark"]) ||
           `benchmark-${index + 1}`,
-        impact: getCell(row, ["impacto", "impacto negocio"]),
-        kvValue: getCell(row, [
-          "valor kv partners",
-          "valor kv",
-          "kv partners",
-          "valor atual",
-        ]),
-        marketValue: getCell(row, [
-          "valor mercado",
-          "valor do mercado",
-          "benchmark mercado",
-          "market value",
-        ]),
-        metric: getCell(row, ["metrica", "métrica", "metric"]),
-        priority: getCell(row, ["prioridade", "nivel prioridade"]),
+        impact: getCell(row, ["impacto"]),
+        kvValue: getCell(row, ["valor kv partners"]),
+        marketValue: getCell(row, ["valor mercado"]),
+        metric: getCell(row, ["metrica"]),
+        observation: getCell(row, ["observacao"]),
+        priority: getCell(row, ["prioridade"]),
       }),
     );
 
