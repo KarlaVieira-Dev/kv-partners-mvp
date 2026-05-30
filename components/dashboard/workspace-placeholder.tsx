@@ -11,19 +11,19 @@ export function WorkspacePlaceholder({ title }: { title: string }) {
           <div>
             <p className="flex items-center gap-2 text-sm font-medium text-zinc-500">
               <Sparkles className="size-4 text-zinc-950" />
-              Product Intelligence workspace
+              Espaco de Inteligencia de Produto
             </p>
             <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-950">
               {title}
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-              This area is wired into the navigation and ready for the next MVP
-              build step.
+              Esta area ja esta conectada a navegacao e pronta para a proxima
+              etapa do MVP.
             </p>
           </div>
           <Link className={buttonVariants({ variant: "outline" })} href="/">
             <ArrowLeft className="size-4" />
-            Executive Center
+            Centro Executivo
           </Link>
         </div>
       </section>

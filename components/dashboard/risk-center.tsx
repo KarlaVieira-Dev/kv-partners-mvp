@@ -5,9 +5,17 @@ import { useEffect, useMemo, useState } from "react";
 
 import type { RiskRow, RisksResponse } from "@/lib/google-sheets/types";
 import { cn } from "@/lib/utils";
+import {
+  DataTable,
+  FilterBar,
+  IntelligentSummary,
+  KPIGrid,
+  Pagination,
+  usePaginatedRows,
+} from "./shared";
 
 const uniqueOptions = (values: string[]) => [
-  "All",
+  "Todos",
   ...Array.from(new Set(values.filter(Boolean))).sort(),
 ];
 
@@ -54,9 +62,9 @@ const scoreColor = (score: number) => {
 export function RiskCenter() {
   const [risks, setRisks] = useState<RiskRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [healthLevel, setHealthLevel] = useState("All");
-  const [riskLevel, setRiskLevel] = useState("All");
-  const [type, setType] = useState("All");
+  const [healthLevel, setHealthLevel] = useState("Todos");
+  const [riskLevel, setRiskLevel] = useState("Todos");
+  const [type, setType] = useState("Todos");
 
   useEffect(() => {
     async function loadRisks() {
@@ -84,10 +92,10 @@ export function RiskCenter() {
 
   const filteredRisks = useMemo(() => {
     return risks.filter((risk) => {
-      const matchesRisk = riskLevel === "All" || risk.riskLevel === riskLevel;
+      const matchesRisk = riskLevel === "Todos" || risk.riskLevel === riskLevel;
       const matchesHealth =
-        healthLevel === "All" || risk.healthLevel === healthLevel;
-      const matchesType = type === "All" || risk.accountType === type;
+        healthLevel === "Todos" || risk.healthLevel === healthLevel;
+      const matchesType = type === "Todos" || risk.accountType === type;
 
       return matchesRisk && matchesHealth && matchesType;
     });
@@ -135,31 +143,33 @@ export function RiskCenter() {
     return [
       {
         detail: "Media de risk_score",
-        label: "Risk Score medio",
+        label: "Índice de Risco (Risk Score) médio",
         value: average(risks.map((risk) => risk.riskScore)),
       },
       {
         detail: "Media de health_score",
-        label: "Health Score medio",
+        label: "Índice de Saúde (Health Score) médio",
         value: average(risks.map((risk) => risk.healthScore)),
       },
       {
         detail: "Nivel alto ou critico",
-        label: "Contas em risco alto/critico",
+        label: "Contas em risco alto/crítico",
         value: highRisk.length,
       },
       {
         detail: "Nivel de saude positivo",
-        label: "Contas saudaveis",
+        label: "Contas saudáveis",
         value: healthyAccounts.length,
       },
       {
-        detail: "Acoes sugeridas registradas",
-        label: "Acoes sugeridas",
+        detail: "Ações sugeridas registradas",
+        label: "Ações sugeridas",
         value: risks.filter((risk) => risk.suggestedAction).length,
       },
     ];
   }, [risks]);
+
+  const { page, paginatedRows, setPage } = usePaginatedRows(filteredRisks);
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -167,44 +177,29 @@ export function RiskCenter() {
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-medium text-zinc-500">
-              Identity & Onboarding Intelligence
+              Inteligência de Identidade e Onboarding
             </p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
-              Risk Center
+              Centro de Riscos
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-              Monitor risk, health, access, usage, onboarding and feedback
-              signals across accounts.
+              Monitore risco, saúde, acesso, uso, onboarding e sinais de
+              feedback por conta.
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
             <AlertTriangle className="size-4 text-zinc-950" />
-            {isLoading ? "Loading risks" : `${filteredRisks.length} accounts`}
+            {isLoading ? "Carregando riscos" : `${filteredRisks.length} contas`}
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {metrics.map((metric) => (
-          <article
-            className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm"
-            key={metric.label}
-          >
-            <p className="text-sm font-medium text-zinc-500">
-              {metric.label}
-            </p>
-            <p className="mt-4 text-3xl font-semibold tracking-tight text-zinc-950">
-              {isLoading ? "..." : metric.value}
-            </p>
-            <p className="mt-2 text-sm text-zinc-500">{metric.detail}</p>
-          </article>
-        ))}
-      </section>
+      <KPIGrid isLoading={isLoading} metrics={metrics} />
 
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
         <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-zinc-500">
-            Conta prioritaria
+            Conta prioritária
           </p>
           <h2 className="mt-2 text-xl font-semibold text-zinc-950">
             {priorityAccount?.accountName ?? "Nenhuma conta"}
@@ -214,7 +209,7 @@ export function RiskCenter() {
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="rounded-md bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700">
-              Risk {priorityAccount?.riskScore ?? 0}
+              Risco {priorityAccount?.riskScore ?? 0}
             </span>
             <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
               {priorityAccount?.riskLevel ?? "Sem nivel"}
@@ -224,7 +219,7 @@ export function RiskCenter() {
 
         <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-zinc-500">
-            Distribuicao de risco
+            Distribuição de risco
           </p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {riskDistribution.map((item) => (
@@ -239,101 +234,113 @@ export function RiskCenter() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-zinc-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 lg:flex-row lg:items-center">
+      <FilterBar>
           <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
             <Search className="size-4 text-zinc-400" />
             <span className="px-3 text-sm text-zinc-500">Tabela de riscos</span>
           </div>
           <div className="grid gap-3 sm:grid-cols-3 lg:w-[540px]">
             <FilterSelect
-              label="Risk level"
+              label="Nivel de risco"
               onChange={setRiskLevel}
               options={filterOptions.riskLevels}
               value={riskLevel}
             />
             <FilterSelect
-              label="Health level"
+              label="Nivel de saude"
               onChange={setHealthLevel}
               options={filterOptions.healthLevels}
               value={healthLevel}
             />
             <FilterSelect
-              label="Type"
+              label="Tipo"
               onChange={setType}
               options={filterOptions.types}
               value={type}
             />
           </div>
-        </div>
+      </FilterBar>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1120px] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-zinc-200 bg-zinc-50 text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
-                <th className="px-5 py-3">Conta</th>
-                <th className="px-5 py-3">Tipo</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Risk Score</th>
-                <th className="px-5 py-3">Health Score</th>
-                <th className="px-5 py-3">Nivel de Risco</th>
-                <th className="px-5 py-3">Nivel de Saude</th>
-                <th className="px-5 py-3">Motivo Principal</th>
-                <th className="px-5 py-3">Acao Sugerida</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {filteredRisks.map((risk) => (
-                <tr className="align-top text-sm text-zinc-600" key={risk.accountId}>
-                  <td className="px-5 py-4 font-medium text-zinc-950">
-                    {risk.accountName}
-                  </td>
-                  <td className="px-5 py-4">{risk.accountType}</td>
-                  <td className="px-5 py-4">{risk.accountStatus}</td>
-                  <td className="px-5 py-4">
-                    <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
-                      {risk.riskScore}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span
-                      className={cn(
-                        "rounded-md px-2 py-1 text-xs font-medium",
-                        scoreColor(risk.healthScore),
-                      )}
-                    >
-                      {risk.healthScore}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span
-                      className={cn(
-                        "rounded-md px-2 py-1 text-xs font-medium",
-                        riskColor(risk.riskLevel),
-                      )}
-                    >
-                      {risk.riskLevel}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4">{risk.healthLevel}</td>
-                  <td className="max-w-[240px] px-5 py-4 leading-6">
-                    {risk.mainReason}
-                  </td>
-                  <td className="max-w-[240px] px-5 py-4 leading-6">
-                    {risk.suggestedAction}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <DataTable
+        columns={[
+          {
+            className: "font-medium text-zinc-950",
+            header: "Conta",
+            render: (risk) => risk.accountName,
+          },
+          { header: "Tipo", render: (risk) => risk.accountType },
+          { header: "Status", render: (risk) => risk.accountStatus },
+          {
+            header: "Índice de Risco (Risk Score)",
+            render: (risk) => (
+              <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
+                {risk.riskScore}
+              </span>
+            ),
+          },
+          {
+            header: "Índice de Saúde (Health Score)",
+            render: (risk) => (
+              <span
+                className={cn(
+                  "rounded-md px-2 py-1 text-xs font-medium",
+                  scoreColor(risk.healthScore),
+                )}
+              >
+                {risk.healthScore}
+              </span>
+            ),
+          },
+          {
+            header: "Nível de Risco",
+            render: (risk) => (
+              <span
+                className={cn(
+                  "rounded-md px-2 py-1 text-xs font-medium",
+                  riskColor(risk.riskLevel),
+                )}
+              >
+                {risk.riskLevel}
+              </span>
+            ),
+          },
+          { header: "Nível de Saúde", render: (risk) => risk.healthLevel },
+          {
+            className: "max-w-[240px] leading-6",
+            header: "Motivo Principal",
+            render: (risk) => risk.mainReason,
+          },
+          {
+            className: "max-w-[240px] leading-6",
+            header: "Acao Sugerida",
+            render: (risk) => risk.suggestedAction,
+          },
+        ]}
+        emptyMessage="Nenhum registro de risco corresponde aos filtros selecionados."
+        getRowKey={(risk) => risk.accountId}
+        isLoading={isLoading}
+        minWidth="1120px"
+        rows={paginatedRows}
+        title="Tabela de riscos"
+      />
 
-        {!isLoading && filteredRisks.length === 0 && (
-          <div className="border-t border-zinc-100 px-5 py-10 text-center text-sm text-zinc-500">
-            No risk records match the selected filters.
-          </div>
-        )}
-      </section>
+      <Pagination
+        currentPage={page}
+        onPageChange={setPage}
+        totalItems={filteredRisks.length}
+      />
+
+      <IntelligentSummary
+        items={[
+          "A conta prioritária indica a maior exposição consolidada no momento.",
+          "A distribuição de risco orienta onde concentrar a cadência executiva.",
+          "Motivo principal e ação sugerida conectam diagnóstico operacional com próximo passo.",
+        ]}
+        meta={[
+          { label: "Riscos filtrados", value: filteredRisks.length },
+          { label: "Ações sugeridas", value: metrics[4]?.value ?? 0 },
+        ]}
+      />
     </div>
   );
 }

@@ -37,7 +37,7 @@ export function Sidebar() {
           </div>
           <div>
             <p className="text-sm font-semibold text-zinc-950">KV Partners</p>
-            <p className="text-xs text-zinc-500">Product Intelligence</p>
+            <p className="text-xs text-zinc-500">Inteligência de Produto</p>
           </div>
         </div>
 
@@ -66,13 +66,13 @@ export function Sidebar() {
 
         <div className="mt-auto rounded-lg border border-zinc-200 bg-zinc-50 p-4">
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
-            MVP Status
+            Status do MVP
           </p>
           <p className="mt-2 text-sm font-semibold text-zinc-950">
-            Foundation ready
+            Fundação pronta
           </p>
           <p className="mt-1 text-xs leading-5 text-zinc-500">
-            Mock data is powering the first executive workspace.
+            Dados reais do Google Sheets alimentam os modulos principais.
           </p>
         </div>
       </div>

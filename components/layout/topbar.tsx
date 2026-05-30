@@ -11,18 +11,18 @@ export function Topbar() {
         <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
           <Search className="size-4 text-zinc-400" />
           <input
-            aria-label="Search"
+            aria-label="Buscar"
             className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
-            placeholder="Search accounts, signals, risks..."
+            placeholder="Buscar contas, sinais e riscos..."
             type="search"
           />
         </div>
 
-        <Button aria-label="Notifications" size="icon" variant="outline">
+        <Button aria-label="Notificacoes" size="icon" variant="outline">
           <Bell className="size-4" />
         </Button>
         <Button
-          aria-label="Profile"
+          aria-label="Perfil"
           className="hidden sm:inline-flex"
           size="icon"
           variant="outline"

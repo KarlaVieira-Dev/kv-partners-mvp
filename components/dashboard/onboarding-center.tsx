@@ -8,9 +8,17 @@ import type {
   OnboardingsResponse,
 } from "@/lib/google-sheets/types";
 import { cn } from "@/lib/utils";
+import {
+  DataTable,
+  FilterBar,
+  IntelligentSummary,
+  KPIGrid,
+  Pagination,
+  usePaginatedRows,
+} from "./shared";
 
 const uniqueOptions = (values: string[]) => [
-  "All",
+  "Todos",
   ...Array.from(new Set(values.filter(Boolean))).sort(),
 ];
 
@@ -33,9 +41,9 @@ const riskColor: Record<OnboardingRow["risk"], string> = {
 export function OnboardingCenter() {
   const [onboardings, setOnboardings] = useState<OnboardingRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [account, setAccount] = useState("All");
-  const [risk, setRisk] = useState("All");
-  const [status, setStatus] = useState("All");
+  const [account, setAccount] = useState("Todos");
+  const [risk, setRisk] = useState("Todos");
+  const [status, setStatus] = useState("Todos");
 
   useEffect(() => {
     async function loadOnboardings() {
@@ -68,10 +76,10 @@ export function OnboardingCenter() {
   const filteredOnboardings = useMemo(() => {
     return onboardings.filter((onboarding) => {
       const matchesAccount =
-        account === "All" || onboarding.account === account;
-      const matchesRisk = risk === "All" || onboarding.risk === risk;
+        account === "Todos" || onboarding.account === account;
+      const matchesRisk = risk === "Todos" || onboarding.risk === risk;
       const matchesStatus =
-        status === "All" || onboarding.status === status;
+        status === "Todos" || onboarding.status === status;
 
       return matchesAccount && matchesRisk && matchesStatus;
     });
@@ -96,11 +104,11 @@ export function OnboardingCenter() {
       },
       {
         detail: "Status concluido",
-        label: "Onboardings Concluidos",
+        label: "Onboardings Concluídos",
         value: completed.length,
       },
       {
-        detail: "Ainda em execucao",
+        detail: "Ainda em execução",
         label: "Onboardings em Andamento",
         value: inProgress.length,
       },
@@ -119,59 +127,46 @@ export function OnboardingCenter() {
     ];
   }, [onboardings]);
 
+  const { page, paginatedRows, setPage } =
+    usePaginatedRows(filteredOnboardings);
+
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
       <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-medium text-zinc-500">
-              Account Onboarding
+              Onboarding de Contas
             </p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
-              Onboarding Center
+              Centro de Onboarding
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-              Monitor onboarding progress, deadlines, risk, and the next action
-              required for each account.
+              Monitore progresso, prazos, risco e a próxima ação necessária
+              para cada conta em onboarding.
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
             <CalendarClock className="size-4 text-zinc-950" />
-            {isLoading ? "Loading onboardings" : `${filteredOnboardings.length} records`}
+            {isLoading ? "Carregando onboardings" : `${filteredOnboardings.length} registros`}
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {metrics.map((metric) => (
-          <article
-            className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm"
-            key={metric.label}
-          >
-            <p className="text-sm font-medium text-zinc-500">
-              {metric.label}
-            </p>
-            <p className="mt-4 text-3xl font-semibold tracking-tight text-zinc-950">
-              {isLoading ? "..." : metric.value}
-            </p>
-            <p className="mt-2 text-sm text-zinc-500">{metric.detail}</p>
-          </article>
-        ))}
-      </section>
+      <KPIGrid isLoading={isLoading} metrics={metrics} />
 
-      <section className="rounded-lg border border-zinc-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 lg:flex-row lg:items-center">
+      <FilterBar>
           <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
             <Search className="size-4 text-zinc-400" />
             <select
-              aria-label="Filter by account"
+              aria-label="Filtrar por conta"
               className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm text-zinc-900 outline-none"
               onChange={(event) => setAccount(event.target.value)}
               value={account}
             >
               {filterOptions.accounts.map((option) => (
                 <option key={option} value={option}>
-                  {option === "All" ? "All accounts" : option}
+                  {option === "Todos" ? "Todas as contas" : option}
                 </option>
               ))}
             </select>
@@ -185,78 +180,91 @@ export function OnboardingCenter() {
               value={status}
             />
             <FilterSelect
-              label="Risk"
+              label="Risco"
               onChange={setRisk}
               options={filterOptions.risks}
               value={risk}
             />
           </div>
-        </div>
+      </FilterBar>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-zinc-200 bg-zinc-50 text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
-                <th className="px-5 py-3">Conta</th>
-                <th className="px-5 py-3">Data Inicio</th>
-                <th className="px-5 py-3">Data Prevista Conclusao</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Progresso</th>
-                <th className="px-5 py-3">Dias em Andamento</th>
-                <th className="px-5 py-3">Risco</th>
-                <th className="px-5 py-3">Proxima Acao</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {filteredOnboardings.map((onboarding) => (
-                <tr className="align-top text-sm text-zinc-600" key={onboarding.id}>
-                  <td className="px-5 py-4 font-medium text-zinc-950">
-                    {onboarding.account}
-                  </td>
-                  <td className="px-5 py-4">{onboarding.startDate}</td>
-                  <td className="px-5 py-4">
-                    {onboarding.expectedConclusionDate}
-                  </td>
-                  <td className="px-5 py-4">{onboarding.status}</td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-20 overflow-hidden rounded-full bg-zinc-100">
-                        <div
-                          className="h-full rounded-full bg-zinc-950"
-                          style={{ width: `${onboarding.progress}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium text-zinc-700">
-                        {onboarding.progress}%
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4">{onboarding.daysInProgress}</td>
-                  <td className="px-5 py-4">
-                    <span
-                      className={cn(
-                        "rounded-md px-2 py-1 text-xs font-medium",
-                        riskColor[onboarding.risk],
-                      )}
-                    >
-                      {onboarding.risk}
-                    </span>
-                  </td>
-                  <td className="max-w-[260px] px-5 py-4 leading-6">
-                    {onboarding.nextAction}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <DataTable
+        columns={[
+          {
+            className: "font-medium text-zinc-950",
+            header: "Conta",
+            render: (onboarding) => onboarding.account,
+          },
+          { header: "Data Início", render: (onboarding) => onboarding.startDate },
+          {
+            header: "Data Prevista de Conclusão",
+            render: (onboarding) => onboarding.expectedConclusionDate,
+          },
+          { header: "Status", render: (onboarding) => onboarding.status },
+          {
+            header: "Progresso",
+            render: (onboarding) => (
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-20 overflow-hidden rounded-full bg-zinc-100">
+                  <div
+                    className="h-full rounded-full bg-zinc-950"
+                    style={{ width: `${onboarding.progress}%` }}
+                  />
+                </div>
+                <span className="text-xs font-medium text-zinc-700">
+                  {onboarding.progress}%
+                </span>
+              </div>
+            ),
+          },
+          {
+            header: "Dias em Andamento",
+            render: (onboarding) => onboarding.daysInProgress,
+          },
+          {
+            header: "Risco",
+            render: (onboarding) => (
+              <span
+                className={cn(
+                  "rounded-md px-2 py-1 text-xs font-medium",
+                  riskColor[onboarding.risk],
+                )}
+              >
+                {onboarding.risk}
+              </span>
+            ),
+          },
+          {
+            className: "max-w-[260px] leading-6",
+            header: "Próxima Ação",
+            render: (onboarding) => onboarding.nextAction,
+          },
+        ]}
+        emptyMessage="Nenhum registro de onboarding corresponde aos filtros selecionados."
+        getRowKey={(onboarding) => onboarding.id}
+        isLoading={isLoading}
+        minWidth="1100px"
+        rows={paginatedRows}
+        title="Onboardings"
+      />
 
-        {!isLoading && filteredOnboardings.length === 0 && (
-          <div className="border-t border-zinc-100 px-5 py-10 text-center text-sm text-zinc-500">
-            No onboarding records match the selected filters.
-          </div>
-        )}
-      </section>
+      <Pagination
+        currentPage={page}
+        onPageChange={setPage}
+        totalItems={filteredOnboardings.length}
+      />
+
+      <IntelligentSummary
+        items={[
+          "Onboardings com risco alto devem ser priorizados pelo time operacional.",
+          "Progresso e dias em andamento sinalizam contas que podem precisar de intervenção.",
+          "A próxima ação ajuda a transformar acompanhamento em execução concreta.",
+        ]}
+        meta={[
+          { label: "Registros filtrados", value: filteredOnboardings.length },
+          { label: "Tempo medio", value: metrics[4]?.value ?? 0 },
+        ]}
+      />
     </div>
   );
 }

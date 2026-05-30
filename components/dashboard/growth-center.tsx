@@ -5,9 +5,17 @@ import { useEffect, useMemo, useState } from "react";
 
 import type { GrowthResponse } from "@/lib/google-sheets/types";
 import { cn } from "@/lib/utils";
+import {
+  DataTable,
+  FilterBar,
+  IntelligentSummary,
+  KPIGrid,
+  Pagination,
+  usePaginatedRows,
+} from "./shared";
 
 const uniqueOptions = (values: string[]) => [
-  "All",
+  "Todos",
   ...Array.from(new Set(values.filter(Boolean))).sort(),
 ];
 
@@ -38,6 +46,9 @@ const badgeColor = (value: string) => {
   return "bg-emerald-50 text-emerald-700";
 };
 
+const sourceLabel = (source: GrowthResponse["source"]) =>
+  source === "google-sheets" ? "Google Sheets" : "Planilha pendente";
+
 export function GrowthCenter() {
   const [growth, setGrowth] = useState<GrowthResponse>({
     insights: [],
@@ -47,9 +58,9 @@ export function GrowthCenter() {
     source: "not-configured",
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [category, setCategory] = useState("All");
-  const [priority, setPriority] = useState("All");
-  const [status, setStatus] = useState("All");
+  const [category, setCategory] = useState("Todos");
+  const [priority, setPriority] = useState("Todos");
+  const [status, setStatus] = useState("Todos");
 
   useEffect(() => {
     async function loadGrowth() {
@@ -89,9 +100,9 @@ export function GrowthCenter() {
   const filteredJtbd = useMemo(
     () =>
       growth.jtbd.filter((row) => {
-        const matchesCategory = category === "All" || row.category === category;
-        const matchesPriority = priority === "All" || row.priority === priority;
-        const matchesStatus = status === "All" || row.status === status;
+        const matchesCategory = category === "Todos" || row.category === category;
+        const matchesPriority = priority === "Todos" || row.priority === priority;
+        const matchesStatus = status === "Todos" || row.status === status;
 
         return matchesCategory && matchesPriority && matchesStatus;
       }),
@@ -101,9 +112,9 @@ export function GrowthCenter() {
   const filteredInsights = useMemo(
     () =>
       growth.insights.filter((row) => {
-        const matchesCategory = category === "All" || row.category === category;
-        const matchesPriority = priority === "All" || row.priority === priority;
-        const matchesStatus = status === "All" || row.status === status;
+        const matchesCategory = category === "Todos" || row.category === category;
+        const matchesPriority = priority === "Todos" || row.priority === priority;
+        const matchesStatus = status === "Todos" || row.status === status;
 
         return matchesCategory && matchesPriority && matchesStatus;
       }),
@@ -113,8 +124,8 @@ export function GrowthCenter() {
   const filteredRecommendations = useMemo(
     () =>
       growth.recommendations.filter((row) => {
-        const matchesPriority = priority === "All" || row.priority === priority;
-        const matchesStatus = status === "All" || row.status === status;
+        const matchesPriority = priority === "Todos" || row.priority === priority;
+        const matchesStatus = status === "Todos" || row.status === status;
 
         return matchesPriority && matchesStatus;
       }),
@@ -141,7 +152,7 @@ export function GrowthCenter() {
       },
       {
         detail: "Ainda nao concluidas",
-        label: "Recomendacoes Ativas",
+        label: "Recomendações Ativas",
         value: activeRecommendations.length,
       },
       {
@@ -154,12 +165,12 @@ export function GrowthCenter() {
       },
       {
         detail: "Prioridade alta",
-        label: "Jobs Criticos",
+        label: "JTBD Críticos",
         value: criticalJobs.length,
       },
       {
-        detail: "Strategic priority score",
-        label: "Opportunity Score Medio",
+        detail: "Pontuação de prioridade estratégica",
+        label: "Índice de Oportunidade (Opportunity Score) Médio",
         value: average(
           growth.recommendations.map((row) => row.opportunityScore),
         ),
@@ -167,63 +178,63 @@ export function GrowthCenter() {
     ];
   }, [growth]);
 
+  const {
+    page: jtbdPage,
+    paginatedRows: paginatedJtbd,
+    setPage: setJtbdPage,
+  } = usePaginatedRows(filteredJtbd);
+  const {
+    page: insightsPage,
+    paginatedRows: paginatedInsights,
+    setPage: setInsightsPage,
+  } = usePaginatedRows(filteredInsights);
+  const {
+    page: recommendationsPage,
+    paginatedRows: paginatedRecommendations,
+    setPage: setRecommendationsPage,
+  } = usePaginatedRows(filteredRecommendations);
+
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
       <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-medium text-zinc-500">
-              Market & Growth Intelligence
+              Inteligência de Mercado e Crescimento
             </p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
-              Growth Center
+              Centro de Crescimento
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-              Consolidate jobs to be done, strategic insights and
-              recommendations into growth opportunities.
+              Consolide JTBD, insights estratégicos e recomendações em
+              oportunidades de crescimento.
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
             <Radar className="size-4 text-zinc-950" />
-            {isLoading ? "Loading growth data" : growth.source}
+            {isLoading ? "Carregando dados de crescimento" : sourceLabel(growth.source)}
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {metrics.map((metric) => (
-          <article
-            className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm"
-            key={metric.label}
-          >
-            <p className="text-sm font-medium text-zinc-500">
-              {metric.label}
-            </p>
-            <p className="mt-4 text-3xl font-semibold tracking-tight text-zinc-950">
-              {isLoading ? "..." : metric.value}
-            </p>
-            <p className="mt-2 text-sm text-zinc-500">{metric.detail}</p>
-          </article>
-        ))}
-      </section>
+      <KPIGrid isLoading={isLoading} metrics={metrics} />
 
-      <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+      <FilterBar>
           <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
             <Search className="size-4 text-zinc-400" />
             <span className="px-3 text-sm text-zinc-500">
-              Filters for growth intelligence
+              Filtros de inteligência de crescimento
             </span>
           </div>
           <div className="grid gap-3 sm:grid-cols-3 lg:w-[540px]">
             <FilterSelect
-              label="Priority"
+              label="Prioridade"
               onChange={setPriority}
               options={filterOptions.priorities}
               value={priority}
             />
             <FilterSelect
-              label="Category"
+              label="Categoria"
               onChange={setCategory}
               options={filterOptions.categories}
               value={category}
@@ -235,43 +246,44 @@ export function GrowthCenter() {
               value={status}
             />
           </div>
-        </div>
-      </section>
+      </FilterBar>
 
       <section className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
-        <TableCard title="Jobs To Be Done">
-          <table className="w-full min-w-[760px] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-zinc-200 bg-zinc-50 text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
-                <th className="px-5 py-3">Job</th>
-                <th className="px-5 py-3">Frequencia</th>
-                <th className="px-5 py-3">Impacto</th>
-                <th className="px-5 py-3">Prioridade</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {filteredJtbd.map((row) => (
-                <tr className="align-top text-sm text-zinc-600" key={row.id}>
-                  <td className="max-w-[360px] px-5 py-4 font-medium text-zinc-950">
-                    {row.job}
-                  </td>
-                  <td className="px-5 py-4">{row.frequency}</td>
-                  <td className="px-5 py-4">{row.impact}</td>
-                  <td className="px-5 py-4">
-                    <Badge value={row.priority} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </TableCard>
+        <div className="flex flex-col gap-3">
+          <DataTable
+            columns={[
+              {
+                className: "max-w-[360px] font-medium text-zinc-950",
+                header: "Job",
+                render: (row) => row.job,
+              },
+              { header: "Frequência", render: (row) => row.frequency },
+              { header: "Impacto", render: (row) => row.impact },
+              {
+                header: "Prioridade",
+                render: (row) => <Badge value={row.priority} />,
+              },
+            ]}
+            emptyMessage="Nenhum JTBD corresponde aos filtros selecionados."
+            getRowKey={(row) => row.id}
+            isLoading={isLoading}
+            minWidth="760px"
+            rows={paginatedJtbd}
+            title="JTBD"
+          />
+          <Pagination
+            currentPage={jtbdPage}
+            onPageChange={setJtbdPage}
+            totalItems={filteredJtbd.length}
+          />
+        </div>
 
         <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-zinc-500">
-            Opportunity Radar
+            Radar de Oportunidades
           </p>
           <div className="mt-4 space-y-3">
-            <RadarItem label="Retencao" value={growth.radar.retention} />
+            <RadarItem label="Retenção" value={growth.radar.retention} />
             <RadarItem label="Expansao" value={growth.radar.expansion} />
             <RadarItem
               label="Eficiencia operacional"
@@ -281,63 +293,73 @@ export function GrowthCenter() {
         </div>
       </section>
 
-      <TableCard title="Strategic Insights">
-        <table className="w-full min-w-[980px] border-collapse text-left">
-          <thead>
-            <tr className="border-b border-zinc-200 bg-zinc-50 text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
-              <th className="px-5 py-3">Insight</th>
-              <th className="px-5 py-3">Categoria</th>
-              <th className="px-5 py-3">Conta Relacionada</th>
-              <th className="px-5 py-3">Impacto</th>
-              <th className="px-5 py-3">Data</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100">
-            {filteredInsights.map((row) => (
-              <tr className="align-top text-sm text-zinc-600" key={row.id}>
-                <td className="max-w-[360px] px-5 py-4 font-medium text-zinc-950">
-                  {row.insight}
-                </td>
-                <td className="px-5 py-4">{row.category}</td>
-                <td className="px-5 py-4">{row.accountName}</td>
-                <td className="px-5 py-4">
-                  <Badge value={row.impact} />
-                </td>
-                <td className="px-5 py-4">{row.date}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </TableCard>
+      <DataTable
+        columns={[
+          {
+            className: "max-w-[360px] font-medium text-zinc-950",
+            header: "Insight",
+            render: (row) => row.insight,
+          },
+          { header: "Categoria", render: (row) => row.category },
+          { header: "Conta Relacionada", render: (row) => row.accountName },
+          { header: "Impacto", render: (row) => <Badge value={row.impact} /> },
+          { header: "Data", render: (row) => row.date },
+        ]}
+        emptyMessage="Nenhum insight corresponde aos filtros selecionados."
+        getRowKey={(row) => row.id}
+        isLoading={isLoading}
+        minWidth="980px"
+        rows={paginatedInsights}
+        title="Insights Estratégicos"
+      />
+      <Pagination
+        currentPage={insightsPage}
+        onPageChange={setInsightsPage}
+        totalItems={filteredInsights.length}
+      />
 
-      <TableCard title="Strategic Recommendations">
-        <table className="w-full min-w-[980px] border-collapse text-left">
-          <thead>
-            <tr className="border-b border-zinc-200 bg-zinc-50 text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
-              <th className="px-5 py-3">Recomendacao</th>
-              <th className="px-5 py-3">Prioridade</th>
-              <th className="px-5 py-3">Area Responsavel</th>
-              <th className="px-5 py-3">Impacto Estimado</th>
-              <th className="px-5 py-3">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100">
-            {filteredRecommendations.map((row) => (
-              <tr className="align-top text-sm text-zinc-600" key={row.id}>
-                <td className="max-w-[360px] px-5 py-4 font-medium text-zinc-950">
-                  {row.recommendation}
-                </td>
-                <td className="px-5 py-4">
-                  <Badge value={row.priority} />
-                </td>
-                <td className="px-5 py-4">{row.area}</td>
-                <td className="px-5 py-4">{row.estimatedImpact}</td>
-                <td className="px-5 py-4">{row.status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </TableCard>
+      <DataTable
+        columns={[
+          {
+            className: "max-w-[360px] font-medium text-zinc-950",
+            header: "Recomendação",
+            render: (row) => row.recommendation,
+          },
+          {
+            header: "Prioridade",
+            render: (row) => <Badge value={row.priority} />,
+          },
+          { header: "Area Responsavel", render: (row) => row.area },
+          { header: "Impacto Estimado", render: (row) => row.estimatedImpact },
+          { header: "Status", render: (row) => row.status },
+        ]}
+        emptyMessage="Nenhuma recomendação corresponde aos filtros selecionados."
+        getRowKey={(row) => row.id}
+        isLoading={isLoading}
+        minWidth="980px"
+        rows={paginatedRecommendations}
+        title="Recomendações Estratégicas"
+      />
+      <Pagination
+        currentPage={recommendationsPage}
+        onPageChange={setRecommendationsPage}
+        totalItems={filteredRecommendations.length}
+      />
+
+      <IntelligentSummary
+        items={[
+          "JTBD críticos mostram dores operacionais com maior potencial estratégico.",
+          "Insights conectados a contas ajudam a priorizar retenção, expansão e eficiência.",
+          "Recomendações ativas devem orientar a cadência entre produto, CS e operações.",
+        ]}
+        meta={[
+          {
+            label: "Índice de Oportunidade (Opportunity Score) médio",
+            value: metrics[4]?.value ?? 0,
+          },
+          { label: "Fonte", value: sourceLabel(growth.source) },
+        ]}
+      />
     </div>
   );
 }
@@ -390,22 +412,5 @@ function RadarItem({ label, value }: { label: string; value: number }) {
       <span className="text-sm font-medium text-zinc-700">{label}</span>
       <span className="text-xl font-semibold text-zinc-950">{value}</span>
     </div>
-  );
-}
-
-function TableCard({
-  children,
-  title,
-}: {
-  children: React.ReactNode;
-  title: string;
-}) {
-  return (
-    <section className="rounded-lg border border-zinc-200 bg-white shadow-sm">
-      <div className="border-b border-zinc-200 px-5 py-4">
-        <h2 className="text-base font-semibold text-zinc-950">{title}</h2>
-      </div>
-      <div className="overflow-x-auto">{children}</div>
-    </section>
   );
 }

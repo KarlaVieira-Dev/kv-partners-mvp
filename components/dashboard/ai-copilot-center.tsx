@@ -14,6 +14,13 @@ import type {
   RiskRow,
   RisksResponse,
 } from "@/lib/google-sheets/types";
+import {
+  FilterBar,
+  IntelligentSummary,
+  KPIGrid,
+  Pagination,
+  usePaginatedRows,
+} from "./shared";
 
 type CopilotData = {
   accounts: ExecutiveAccountRow[];
@@ -142,7 +149,7 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
     accounts: riskyAccounts.map((risk) => risk.accountName),
     data: riskyAccounts.map(
       (risk) =>
-        `${risk.accountName}: risk ${risk.riskScore}, health ${risk.healthScore}, ${risk.riskLevel}`,
+        `${risk.accountName}: Índice de Risco (Risk Score) ${risk.riskScore}, Índice de Saúde (Health Score) ${risk.healthScore}, ${risk.riskLevel}`,
     ),
     recommendations: riskyAccounts.map((risk) => risk.suggestedAction),
     summary:
@@ -201,6 +208,32 @@ export function AICopilotCenter() {
   }, []);
 
   const answer = useMemo(() => buildAnswer(question, data), [data, question]);
+  const metrics = useMemo(
+    () => [
+      {
+        detail: "Contexto de contas",
+        label: "Contas monitoradas",
+        value: data.accounts.length,
+      },
+      {
+        detail: "Sinais de risco disponiveis",
+        label: "Riscos analisados",
+        value: data.risks.length,
+      },
+      {
+        detail: "Jornadas em acompanhamento",
+        label: "Onboardings lidos",
+        value: data.onboardings.length,
+      },
+      {
+        detail: "Voz do cliente",
+        label: "Feedbacks lidos",
+        value: data.feedbacks.length,
+      },
+    ],
+    [data],
+  );
+  const { page, paginatedRows, setPage } = usePaginatedRows(answer.data);
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -208,41 +241,48 @@ export function AICopilotCenter() {
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-medium text-zinc-500">
-              Strategic assistant
+              Assistente estratégico
             </p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
               AI Copilot
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-              Ask strategic questions about account risk, onboarding,
-              feedbacks, and growth opportunities using the current KV Partners
-              data.
+              Faça perguntas estratégicas sobre risco de contas, onboarding,
+              feedbacks e oportunidades de crescimento usando os dados atuais
+              da KV Partners.
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
             <Bot className="size-4 text-zinc-950" />
-            {isLoading ? "Loading context" : "Rules engine active"}
+            {isLoading ? "Carregando contexto" : "Motor de regras ativo"}
           </div>
         </div>
       </section>
 
-      <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-        <label className="text-sm font-medium text-zinc-500" htmlFor="question">
-          Pergunta
-        </label>
-        <div className="mt-2 flex flex-col gap-3 sm:flex-row">
-          <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
-            <Search className="size-4 text-zinc-400" />
-            <input
-              className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
-              id="question"
-              onChange={(event) => setQuestion(event.target.value)}
-              placeholder="Quais contas possuem maior risco?"
-              value={question}
-            />
+      <KPIGrid isLoading={isLoading} metrics={metrics} />
+
+      <FilterBar>
+        <div className="w-full">
+          <label
+            className="text-sm font-medium text-zinc-500"
+            htmlFor="question"
+          >
+            Pergunta
+          </label>
+          <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+            <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
+              <Search className="size-4 text-zinc-400" />
+              <input
+                className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
+                id="question"
+                onChange={(event) => setQuestion(event.target.value)}
+                placeholder="Quais contas possuem maior risco?"
+                value={question}
+              />
+            </div>
           </div>
         </div>
-      </section>
+      </FilterBar>
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         {quickQuestions.map((quickQuestion) => (
@@ -288,12 +328,30 @@ export function AICopilotCenter() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <AnswerList items={answer.data} title="Dados encontrados" />
+        <AnswerList items={paginatedRows} title="Dados encontrados" />
         <AnswerList
           items={answer.recommendations}
           title="Recomendações relacionadas"
         />
       </section>
+
+      <Pagination
+        currentPage={page}
+        onPageChange={setPage}
+        totalItems={answer.data.length}
+      />
+
+      <IntelligentSummary
+        items={[
+          "O Copilot ainda opera por regras e consultas sobre os dados reais disponíveis.",
+          "As respostas combinam sinais de risco, onboarding, feedback e crescimento sem chamada a IA externa.",
+          "A próxima evolução natural é conectar o motor a uma camada generativa com contexto controlado.",
+        ]}
+        meta={[
+          { label: "Pergunta ativa", value: question },
+          { label: "Dados encontrados", value: answer.data.length },
+        ]}
+      />
     </div>
   );
 }
