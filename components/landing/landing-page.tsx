@@ -1,60 +1,79 @@
+"use client";
+
 import {
   ArrowRight,
   BrainCircuit,
+  ChevronLeft,
+  ChevronRight,
   GitBranch,
   MessageSquareText,
   Sparkles,
+  Target,
 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const problemCards = [
+const carouselSlides = [
   {
-    title: "Dados Isolados",
-    text: "Onboarding, feedbacks, métricas e mercado vivem em sistemas diferentes.",
+    accent: "01",
+    description:
+      "Contas, onboarding, acessos, eventos e jornadas geram os primeiros sinais sobre a operação.",
+    flow: ["Contas", "Onboarding", "Eventos"],
+    metric: "Primeiros sinais",
+    title: "Sinais Operacionais",
   },
   {
-    title: "Contexto Perdido",
-    text: "Sinais importantes existem, mas raramente são conectados.",
+    accent: "02",
+    description:
+      "Feedbacks são estruturados por tema, sentimento e prioridade para revelar dores recorrentes.",
+    flow: ["Feedbacks", "Temas", "Sentimento"],
+    metric: "Dores recorrentes",
+    title: "Voz do Cliente",
   },
   {
-    title: "Decisões Reativas",
-    text: "Problemas normalmente são identificados apenas depois do impacto.",
+    accent: "03",
+    description:
+      "Sinais operacionais e feedbacks alimentam scores de risco, alertas e ações sugeridas.",
+    flow: ["Sinais", "Score", "Risco", "Ação"],
+    metric: "Predição",
+    title: "Risco e Predição",
+  },
+  {
+    accent: "04",
+    description:
+      "Tendências, concorrentes, JTBD e benchmarks ajudam a identificar oportunidades estratégicas.",
+    flow: ["Mercado", "Benchmark", "Oportunidades"],
+    metric: "Crescimento",
+    title: "Mercado e Crescimento",
+  },
+  {
+    accent: "05",
+    description:
+      "O copiloto consolida todos os sinais e traduz dados complexos em recomendações executivas.",
+    flow: ["Dados", "Contexto", "Recomendação", "Decisão"],
+    metric: "Decisão",
+    title: "AI Copilot",
   },
 ];
 
-const flowSteps = [
-  "Contas",
-  "Onboarding",
-  "Feedback Intelligence",
-  "Identity & Onboarding Intelligence",
-  "Market & Growth Intelligence",
-  "AI Copilot",
-  "Decisão",
-];
-
-const differentiators = [
+const valueCards = [
   {
     icon: GitBranch,
-    title: "Dados Operacionais",
-    text: "Eventos, jornadas e comportamento operacional.",
-  },
-  {
-    icon: MessageSquareText,
-    title: "Voz do Cliente",
-    text: "Feedbacks estruturados, temas e sentimentos.",
+    title: "Menos reação",
+    text: "Identifique sinais antes que virem problemas.",
   },
   {
     icon: BrainCircuit,
-    title: "Inteligência Preditiva",
-    text: "Identificação antecipada de riscos e oportunidades.",
+    title: "Mais contexto",
+    text: "Conecte operação, cliente, risco e mercado.",
   },
   {
-    icon: Sparkles,
-    title: "IA Aplicada",
-    text: "Recomendações executivas orientadas por contexto.",
+    icon: Target,
+    title: "Melhor decisão",
+    text: "Priorize ações com base em evidências.",
   },
 ];
 
@@ -92,6 +111,33 @@ const platformCenters = [
 ];
 
 export function LandingPage() {
+  const [activeSlide, setActiveSlide] = useState(0);
+  const slide = carouselSlides[activeSlide];
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setActiveSlide((current) => (current + 1) % carouselSlides.length);
+    }, 7000);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const progress = useMemo(
+    () => ((activeSlide + 1) / carouselSlides.length) * 100,
+    [activeSlide],
+  );
+
+  const goToPrevious = () => {
+    setActiveSlide(
+      (current) =>
+        (current - 1 + carouselSlides.length) % carouselSlides.length,
+    );
+  };
+
+  const goToNext = () => {
+    setActiveSlide((current) => (current + 1) % carouselSlides.length);
+  };
+
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-zinc-950">
       <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/85 backdrop-blur-xl">
@@ -110,11 +156,11 @@ export function LandingPage() {
             </div>
           </Link>
           <nav className="hidden items-center gap-5 text-sm font-medium text-zinc-600 md:flex">
-            <a className="hover:text-zinc-950" href="#problema">
-              Problema
+            <a className="hover:text-zinc-950" href="#ecossistema">
+              Ecossistema
             </a>
-            <a className="hover:text-zinc-950" href="#estrategia">
-              Estratégia
+            <a className="hover:text-zinc-950" href="#valor">
+              Valor
             </a>
             <a className="hover:text-zinc-950" href="#demonstracao">
               Demonstração
@@ -157,7 +203,7 @@ export function LandingPage() {
                   buttonVariants({ size: "lg" }),
                   "bg-white text-zinc-950 hover:bg-zinc-200",
                 )}
-                href="#estrategia"
+                href="#ecossistema"
               >
                 Explorar Ecossistema
                 <ArrowRight className="size-4" />
@@ -177,87 +223,138 @@ export function LandingPage() {
         </div>
       </section>
 
-      <Section
-        description="Empresas investem em sistemas, dashboards e indicadores. Mesmo assim, decisões importantes continuam sendo tomadas sem uma visão conectada do negócio."
-        id="problema"
-        title={
-          <>
-            As empresas possuem dados.
-            <br />
-            Mas não possuem contexto.
-          </>
-        }
+      <section
+        className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8"
+        id="ecossistema"
       >
-        <div className="grid gap-4 lg:grid-cols-3">
-          {problemCards.map((card) => (
-            <article
-              className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm"
-              key={card.title}
-            >
-              <h3 className="text-base font-semibold text-zinc-950">
-                {card.title}
+        <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+          <div>
+            <p className="text-sm font-medium text-zinc-500">Ecossistema</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
+              Como o ecossistema transforma sinais em decisão
+            </h2>
+            <p className="mt-3 text-base leading-7 text-zinc-600">
+              Cada camada conecta um tipo de sinal até gerar recomendações
+              estratégicas.
+            </p>
+          </div>
+          <div className="h-1 overflow-hidden rounded-full bg-zinc-200">
+            <div
+              className="h-full rounded-full bg-zinc-950 transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="mt-6 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
+          <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="border-b border-zinc-200 p-5 lg:border-b-0 lg:border-r">
+              <div className="flex items-center justify-between gap-4">
+                <span className="rounded-md bg-zinc-950 px-2.5 py-1 text-xs font-semibold text-white">
+                  {slide.accent}
+                </span>
+                <span className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
+                  {slide.metric}
+                </span>
+              </div>
+              <h3 className="mt-8 text-3xl font-semibold tracking-tight text-zinc-950">
+                {slide.title}
               </h3>
-              <p className="mt-3 text-sm leading-6 text-zinc-600">
-                {card.text}
+              <p className="mt-4 text-base leading-7 text-zinc-600">
+                {slide.description}
               </p>
-            </article>
-          ))}
-        </div>
-        <ImpactStatement
-          lines={["Coletar dados não gera valor.", "Tomar decisões melhores gera."]}
-        />
-      </Section>
-
-      <Section
-        description="Cada camada gera sinais que enriquecem a próxima etapa até chegar à tomada de decisão."
-        id="estrategia"
-        title="Da operação à estratégia."
-      >
-        <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-          <div className="hidden items-center gap-2 lg:flex">
-            {flowSteps.map((step, index) => (
-              <div className="flex flex-1 items-center gap-2" key={step}>
-                <div className="flex min-h-24 flex-1 flex-col justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-                  <span className="text-xs font-medium text-zinc-500">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="text-sm font-semibold leading-5 text-zinc-950">
-                    {step}
-                  </span>
-                </div>
-                {index < flowSteps.length - 1 ? (
-                  <ArrowRight className="size-4 shrink-0 text-zinc-400" />
-                ) : null}
+              <div className="mt-8 flex items-center gap-2">
+                <button
+                  aria-label="Slide anterior"
+                  className="flex size-9 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-700 transition hover:bg-zinc-100"
+                  onClick={goToPrevious}
+                  type="button"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <button
+                  aria-label="Próximo slide"
+                  className="flex size-9 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-700 transition hover:bg-zinc-100"
+                  onClick={goToNext}
+                  type="button"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
               </div>
-            ))}
+            </div>
+
+            <div className="bg-zinc-950 p-5 text-white">
+              <div className="grid min-h-[280px] content-center gap-4">
+                <div className="rounded-lg border border-white/10 bg-white/[0.06] p-4">
+                  <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-400">
+                    Resumo visual
+                  </p>
+                  <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                    {slide.flow.map((item, index) => (
+                      <div className="flex items-center gap-3" key={item}>
+                        <span className="rounded-md border border-white/10 bg-white/[0.08] px-3 py-2 text-sm font-semibold text-white">
+                          {item}
+                        </span>
+                        {index < slide.flow.length - 1 ? (
+                          <ArrowRight className="hidden size-4 text-zinc-500 sm:block" />
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {["Sinal", "Contexto", "Decisão"].map((label, index) => (
+                    <div
+                      className="rounded-lg border border-white/10 bg-white/[0.06] p-3"
+                      key={label}
+                    >
+                      <p className="text-xs text-zinc-400">{label}</p>
+                      <p className="mt-2 text-2xl font-semibold">
+                        {[24, 68, 91][(activeSlide + index) % 3]}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-3 lg:hidden">
-            {flowSteps.map((step, index) => (
-              <div className="flex gap-3" key={step}>
-                <div className="flex flex-col items-center">
-                  <span className="flex size-8 items-center justify-center rounded-md bg-zinc-950 text-xs font-semibold text-white">
-                    {index + 1}
-                  </span>
-                  {index < flowSteps.length - 1 ? (
-                    <span className="h-7 w-px bg-zinc-200" />
-                  ) : null}
-                </div>
-                <div className="min-h-10 flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-950">
-                  {step}
-                </div>
-              </div>
+          <div className="flex flex-wrap gap-2 border-t border-zinc-200 p-4">
+            {carouselSlides.map((item, index) => (
+              <button
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-xs font-medium transition",
+                  activeSlide === index
+                    ? "bg-zinc-950 text-white"
+                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200",
+                )}
+                key={item.title}
+                onClick={() => setActiveSlide(index)}
+                type="button"
+              >
+                {item.title}
+              </button>
             ))}
           </div>
         </div>
-      </Section>
+      </section>
 
-      <Section
-        description="Separados, esses sinais possuem pouco valor. Conectados, eles se tornam inteligência."
-        title="Por que este ecossistema é diferente?"
+      <section
+        className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
+        id="valor"
       >
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {differentiators.map((item) => {
+        <div className="mb-6 max-w-3xl">
+          <h2 className="text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
+            Por que isso importa?
+          </h2>
+          <p className="mt-3 text-base leading-7 text-zinc-600">
+            O valor aparece quando sinais deixam de ser fragmentos e passam a
+            orientar uma decisão.
+          </p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          {valueCards.map((item) => {
             const Icon = item.icon;
 
             return (
@@ -276,20 +373,20 @@ export function LandingPage() {
             );
           })}
         </div>
-        <ImpactStatement
-          lines={[
-            "Dados mostram o que aconteceu.",
-            "Inteligência explica por quê.",
-            "IA sugere o que fazer.",
-          ]}
-        />
-      </Section>
+      </section>
 
-      <Section
-        description="Acesse os centros operacionais para ver como os sinais são consolidados em uma experiência de Product Intelligence."
+      <section
+        className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
         id="demonstracao"
-        title="Explore a Plataforma"
       >
+        <div className="mb-6 max-w-3xl">
+          <h2 className="text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
+            Explore a Plataforma
+          </h2>
+          <p className="mt-3 text-base leading-7 text-zinc-600">
+            Acesse os centros para ver o ecossistema em funcionamento.
+          </p>
+        </div>
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {platformCenters.map((center) => (
             <Link
@@ -311,25 +408,9 @@ export function LandingPage() {
             </Link>
           ))}
         </div>
-      </Section>
-
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm leading-6 text-zinc-600">
-            Projeto desenvolvido por Karla Vieira. Senior Product Manager com
-            experiência em plataformas B2B, onboarding, identidade, governança,
-            compliance e produtos orientados a dados.
-          </p>
-          <p className="mt-3 text-sm leading-6 text-zinc-600">
-            O Product Intelligence Ecosystem foi criado para demonstrar uma
-            visão integrada de Product Intelligence, conectando operações,
-            feedbacks, riscos, mercado e inteligência artificial em uma única
-            experiência.
-          </p>
-        </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 pb-14 pt-8 sm:px-6 lg:px-8">
         <div className="rounded-lg border border-zinc-200 bg-zinc-950 p-7 text-white shadow-sm sm:p-8">
           <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
             A próxima decisão não deveria depender de opinião.
@@ -351,46 +432,6 @@ export function LandingPage() {
         </div>
       </section>
     </main>
-  );
-}
-
-function Section({
-  children,
-  description,
-  id,
-  title,
-}: {
-  children: React.ReactNode;
-  description?: string;
-  id?: string;
-  title: React.ReactNode;
-}) {
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8" id={id}>
-      <div className="mb-6 max-w-3xl">
-        <h2 className="text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
-          {title}
-        </h2>
-        {description ? (
-          <p className="mt-3 text-base leading-7 text-zinc-600">
-            {description}
-          </p>
-        ) : null}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function ImpactStatement({ lines }: { lines: string[] }) {
-  return (
-    <div className="mt-5 rounded-lg border border-zinc-200 bg-zinc-950 p-5 text-white shadow-sm">
-      {lines.map((line) => (
-        <p className="text-lg font-semibold leading-7 text-zinc-100" key={line}>
-          {line}
-        </p>
-      ))}
-    </div>
   );
 }
 
@@ -436,7 +477,10 @@ function HeroScene() {
         </div>
       </div>
       <div className="absolute bottom-10 right-8 hidden w-80 rounded-lg border border-white/10 bg-white/[0.08] p-4 shadow-2xl md:block">
-        <p className="text-sm font-semibold text-white">AI Copilot</p>
+        <div className="flex items-center gap-2">
+          <MessageSquareText className="size-4 text-zinc-300" />
+          <p className="text-sm font-semibold text-white">AI Copilot</p>
+        </div>
         <p className="mt-2 text-sm leading-6 text-zinc-300">
           Recomendação: priorizar onboarding inicial e reduzir fricção de
           permissões nas contas em risco.
