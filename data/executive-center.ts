@@ -1,5 +1,5 @@
 export const navigationItems = [
-  { label: "Centro Executivo", href: "/" },
+  { label: "Centro Executivo", href: "/executive-center" },
   { label: "Contas", href: "/accounts" },
   { label: "Centro de Onboarding", href: "/onboarding-center" },
   { label: "Centro de Feedbacks", href: "/feedback-center" },
