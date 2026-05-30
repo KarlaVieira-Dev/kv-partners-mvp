@@ -1,10 +1,10 @@
-import { WorkspacePlaceholder } from "@/components/dashboard/workspace-placeholder";
+import { AICopilotCenter } from "@/components/dashboard/ai-copilot-center";
 import { AppShell } from "@/components/layout/app-shell";
 
 export default function AICopilotPage() {
   return (
     <AppShell>
-      <WorkspacePlaceholder title="AI Copilot" />
+      <AICopilotCenter />
     </AppShell>
   );
 }
