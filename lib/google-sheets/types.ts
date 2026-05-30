@@ -125,6 +125,38 @@ export type GrowthRecommendationRow = {
   status: string;
 };
 
+export type GrowthMarketTrendRow = {
+  category: string;
+  direction: string;
+  id: string;
+  impact: string;
+  priority: string;
+  source: string;
+  theme: string;
+};
+
+export type GrowthCompetitiveRadarRow = {
+  category: string;
+  competitor: string;
+  date: string;
+  id: string;
+  impact: string;
+  movement: string;
+  source: string;
+};
+
+export type GrowthBenchmarkRow = {
+  category: string;
+  comparativeStatus: string;
+  difference: string;
+  id: string;
+  impact: string;
+  kvValue: string;
+  marketValue: string;
+  metric: string;
+  priority: string;
+};
+
 export type GrowthRadar = {
   expansion: number;
   operationalEfficiency: number;
@@ -132,8 +164,11 @@ export type GrowthRadar = {
 };
 
 export type GrowthResponse = {
+  benchmarks: GrowthBenchmarkRow[];
+  competitiveRadar: GrowthCompetitiveRadarRow[];
   insights: GrowthInsightRow[];
   jtbd: GrowthJtbdRow[];
+  marketTrends: GrowthMarketTrendRow[];
   radar: GrowthRadar;
   recommendations: GrowthRecommendationRow[];
   source: "google-sheets" | "not-configured";

@@ -14,32 +14,44 @@ import {
   usePaginatedRows,
 } from "./shared";
 
+const emptyGrowth: GrowthResponse = {
+  benchmarks: [],
+  competitiveRadar: [],
+  insights: [],
+  jtbd: [],
+  marketTrends: [],
+  radar: { expansion: 0, operationalEfficiency: 0, retention: 0 },
+  recommendations: [],
+  source: "not-configured",
+};
+
 const uniqueOptions = (values: string[]) => [
   "Todos",
   ...Array.from(new Set(values.filter(Boolean))).sort(),
 ];
 
-const average = (values: number[]) => {
-  if (values.length === 0) {
-    return 0;
-  }
-
-  return Math.round(
-    values.reduce((total, value) => total + value, 0) / values.length,
-  );
-};
-
-const badgeColor = (value: string) => {
-  const normalized = value
+const normalize = (value: string) =>
+  value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-  if (normalized.includes("crit") || normalized.includes("alta")) {
+const badgeColor = (value: string) => {
+  const normalized = normalize(value);
+
+  if (
+    normalized.includes("crit") ||
+    normalized.includes("alta") ||
+    normalized.includes("abaixo")
+  ) {
     return "bg-rose-50 text-rose-700";
   }
 
-  if (normalized.includes("medio") || normalized.includes("planejada")) {
+  if (
+    normalized.includes("medio") ||
+    normalized.includes("planejada") ||
+    normalized.includes("estavel")
+  ) {
     return "bg-amber-50 text-amber-700";
   }
 
@@ -49,18 +61,39 @@ const badgeColor = (value: string) => {
 const sourceLabel = (source: GrowthResponse["source"]) =>
   source === "google-sheets" ? "Google Sheets" : "Planilha pendente";
 
+const matches = (selected: string, value: string) =>
+  selected === "Todos" || value === selected;
+
+const isHighPriority = (value: string) => {
+  const normalized = normalize(value);
+  return normalized.includes("alta") || normalized.includes("crit");
+};
+
+type OpportunityRadarRow = {
+  area: string;
+  description: string;
+  value: number;
+};
+
 export function GrowthCenter() {
-  const [growth, setGrowth] = useState<GrowthResponse>({
-    insights: [],
-    jtbd: [],
-    radar: { expansion: 0, operationalEfficiency: 0, retention: 0 },
-    recommendations: [],
-    source: "not-configured",
-  });
+  const [growth, setGrowth] = useState<GrowthResponse>(emptyGrowth);
   const [isLoading, setIsLoading] = useState(true);
-  const [category, setCategory] = useState("Todos");
-  const [priority, setPriority] = useState("Todos");
-  const [status, setStatus] = useState("Todos");
+
+  const [strategicCategory, setStrategicCategory] = useState("Todos");
+  const [strategicPriority, setStrategicPriority] = useState("Todos");
+  const [strategicStatus, setStrategicStatus] = useState("Todos");
+
+  const [trendCategory, setTrendCategory] = useState("Todos");
+  const [trendImpact, setTrendImpact] = useState("Todos");
+  const [trendPriority, setTrendPriority] = useState("Todos");
+
+  const [competitor, setCompetitor] = useState("Todos");
+  const [competitorCategory, setCompetitorCategory] = useState("Todos");
+  const [competitorImpact, setCompetitorImpact] = useState("Todos");
+
+  const [benchmarkCategory, setBenchmarkCategory] = useState("Todos");
+  const [benchmarkStatus, setBenchmarkStatus] = useState("Todos");
+  const [benchmarkPriority, setBenchmarkPriority] = useState("Todos");
 
   useEffect(() => {
     async function loadGrowth() {
@@ -68,7 +101,13 @@ export function GrowthCenter() {
         const response = await fetch("/api/growth");
         const data = (await response.json()) as GrowthResponse;
 
-        setGrowth(data);
+        setGrowth({
+          ...emptyGrowth,
+          ...data,
+          benchmarks: data.benchmarks ?? [],
+          competitiveRadar: data.competitiveRadar ?? [],
+          marketTrends: data.marketTrends ?? [],
+        });
       } finally {
         setIsLoading(false);
       }
@@ -77,7 +116,7 @@ export function GrowthCenter() {
     loadGrowth();
   }, []);
 
-  const filterOptions = useMemo(
+  const strategicFilterOptions = useMemo(
     () => ({
       categories: uniqueOptions([
         ...growth.jtbd.map((row) => row.category),
@@ -97,86 +136,163 @@ export function GrowthCenter() {
     [growth],
   );
 
+  const trendFilterOptions = useMemo(
+    () => ({
+      categories: uniqueOptions(growth.marketTrends.map((row) => row.category)),
+      impacts: uniqueOptions(growth.marketTrends.map((row) => row.impact)),
+      priorities: uniqueOptions(growth.marketTrends.map((row) => row.priority)),
+    }),
+    [growth.marketTrends],
+  );
+
+  const competitorFilterOptions = useMemo(
+    () => ({
+      categories: uniqueOptions(
+        growth.competitiveRadar.map((row) => row.category),
+      ),
+      competitors: uniqueOptions(
+        growth.competitiveRadar.map((row) => row.competitor),
+      ),
+      impacts: uniqueOptions(growth.competitiveRadar.map((row) => row.impact)),
+    }),
+    [growth.competitiveRadar],
+  );
+
+  const benchmarkFilterOptions = useMemo(
+    () => ({
+      categories: uniqueOptions(growth.benchmarks.map((row) => row.category)),
+      priorities: uniqueOptions(growth.benchmarks.map((row) => row.priority)),
+      statuses: uniqueOptions(
+        growth.benchmarks.map((row) => row.comparativeStatus),
+      ),
+    }),
+    [growth.benchmarks],
+  );
+
   const filteredJtbd = useMemo(
     () =>
-      growth.jtbd.filter((row) => {
-        const matchesCategory = category === "Todos" || row.category === category;
-        const matchesPriority = priority === "Todos" || row.priority === priority;
-        const matchesStatus = status === "Todos" || row.status === status;
-
-        return matchesCategory && matchesPriority && matchesStatus;
-      }),
-    [category, growth.jtbd, priority, status],
+      growth.jtbd.filter(
+        (row) =>
+          matches(strategicCategory, row.category) &&
+          matches(strategicPriority, row.priority) &&
+          matches(strategicStatus, row.status),
+      ),
+    [growth.jtbd, strategicCategory, strategicPriority, strategicStatus],
   );
 
   const filteredInsights = useMemo(
     () =>
-      growth.insights.filter((row) => {
-        const matchesCategory = category === "Todos" || row.category === category;
-        const matchesPriority = priority === "Todos" || row.priority === priority;
-        const matchesStatus = status === "Todos" || row.status === status;
-
-        return matchesCategory && matchesPriority && matchesStatus;
-      }),
-    [category, growth.insights, priority, status],
+      growth.insights.filter(
+        (row) =>
+          matches(strategicCategory, row.category) &&
+          matches(strategicPriority, row.priority) &&
+          matches(strategicStatus, row.status),
+      ),
+    [growth.insights, strategicCategory, strategicPriority, strategicStatus],
   );
 
   const filteredRecommendations = useMemo(
     () =>
-      growth.recommendations.filter((row) => {
-        const matchesPriority = priority === "Todos" || row.priority === priority;
-        const matchesStatus = status === "Todos" || row.status === status;
+      growth.recommendations.filter(
+        (row) =>
+          matches(strategicPriority, row.priority) &&
+          matches(strategicStatus, row.status),
+      ),
+    [growth.recommendations, strategicPriority, strategicStatus],
+  );
 
-        return matchesPriority && matchesStatus;
-      }),
-    [growth.recommendations, priority, status],
+  const filteredMarketTrends = useMemo(
+    () =>
+      growth.marketTrends.filter(
+        (row) =>
+          matches(trendCategory, row.category) &&
+          matches(trendImpact, row.impact) &&
+          matches(trendPriority, row.priority),
+      ),
+    [growth.marketTrends, trendCategory, trendImpact, trendPriority],
+  );
+
+  const filteredCompetitiveRadar = useMemo(
+    () =>
+      growth.competitiveRadar.filter(
+        (row) =>
+          matches(competitor, row.competitor) &&
+          matches(competitorCategory, row.category) &&
+          matches(competitorImpact, row.impact),
+      ),
+    [
+      competitor,
+      competitorCategory,
+      competitorImpact,
+      growth.competitiveRadar,
+    ],
+  );
+
+  const filteredBenchmarks = useMemo(
+    () =>
+      growth.benchmarks.filter(
+        (row) =>
+          matches(benchmarkCategory, row.category) &&
+          matches(benchmarkStatus, row.comparativeStatus) &&
+          matches(benchmarkPriority, row.priority),
+      ),
+    [benchmarkCategory, benchmarkPriority, benchmarkStatus, growth.benchmarks],
   );
 
   const metrics = useMemo(() => {
-    const activeRecommendations = growth.recommendations.filter(
-      (row) => !row.status.toLowerCase().includes("conclu"),
+    const criticalJobs = growth.jtbd.filter((row) =>
+      isHighPriority(row.priority),
     );
-    const criticalJobs = growth.jtbd.filter((row) => {
-      const priorityValue = row.priority
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
-      return priorityValue.includes("alta") || priorityValue.includes("crit");
-    });
 
     return [
       {
-        detail: "Registros em 09_MGI_Insights",
-        label: "Insights Gerados",
-        value: growth.insights.length,
-      },
-      {
-        detail: "Ainda nao concluidas",
-        label: "Recomendações Ativas",
-        value: activeRecommendations.length,
-      },
-      {
-        detail: "Itens no radar",
-        label: "Oportunidades Identificadas",
-        value:
-          growth.radar.expansion +
-          growth.radar.operationalEfficiency +
-          growth.radar.retention,
-      },
-      {
-        detail: "Prioridade alta",
-        label: "JTBD Críticos",
+        detail: "JTBD com prioridade alta ou critica",
+        label: "Jobs Críticos",
         value: criticalJobs.length,
       },
       {
-        detail: "Pontuação de prioridade estratégica",
-        label: "Índice de Oportunidade (Opportunity Score) Médio",
-        value: average(
-          growth.recommendations.map((row) => row.opportunityScore),
-        ),
+        detail: "Registros em 09_MGI_Insights",
+        label: "Insights Estratégicos",
+        value: growth.insights.length,
+      },
+      {
+        detail: "Registros em 11_MGI_Market_Trends",
+        label: "Tendências Monitoradas",
+        value: growth.marketTrends.length,
+      },
+      {
+        detail: "Registros em 13_MGI_Benchmarks",
+        label: "Benchmarks Monitorados",
+        value: growth.benchmarks.length,
       },
     ];
   }, [growth]);
+
+  const opportunityRadarRows = useMemo<OpportunityRadarRow[]>(
+    () => [
+      {
+        area: "Retenção",
+        description: "Sinais ligados a churn, adoção e recorrência.",
+        value: growth.radar.retention,
+      },
+      {
+        area: "Expansão",
+        description: "Sinais ligados a upsell, cross-sell e crescimento.",
+        value: growth.radar.expansion,
+      },
+      {
+        area: "Eficiência operacional",
+        description: "Sinais ligados a automação, permissões e processos.",
+        value: growth.radar.operationalEfficiency,
+      },
+    ],
+    [growth.radar],
+  );
+
+  const summaryItems = useMemo(
+    () => buildSummaryItems(growth),
+    [growth],
+  );
 
   const {
     page: jtbdPage,
@@ -193,6 +309,21 @@ export function GrowthCenter() {
     paginatedRows: paginatedRecommendations,
     setPage: setRecommendationsPage,
   } = usePaginatedRows(filteredRecommendations);
+  const {
+    page: trendsPage,
+    paginatedRows: paginatedMarketTrends,
+    setPage: setTrendsPage,
+  } = usePaginatedRows(filteredMarketTrends);
+  const {
+    page: competitivePage,
+    paginatedRows: paginatedCompetitiveRadar,
+    setPage: setCompetitivePage,
+  } = usePaginatedRows(filteredCompetitiveRadar);
+  const {
+    page: benchmarksPage,
+    paginatedRows: paginatedBenchmarks,
+    setPage: setBenchmarksPage,
+  } = usePaginatedRows(filteredBenchmarks);
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -206,13 +337,15 @@ export function GrowthCenter() {
               Centro de Crescimento
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-              Consolide JTBD, insights estratégicos e recomendações em
-              oportunidades de crescimento.
+              Hub estratégico para consolidar JTBD, insights, recomendações,
+              tendências de mercado, radar competitivo e benchmarks.
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
             <Radar className="size-4 text-zinc-950" />
-            {isLoading ? "Carregando dados de crescimento" : sourceLabel(growth.source)}
+            {isLoading
+              ? "Carregando dados de crescimento"
+              : sourceLabel(growth.source)}
           </div>
         </div>
       </section>
@@ -220,78 +353,55 @@ export function GrowthCenter() {
       <KPIGrid isLoading={isLoading} metrics={metrics} />
 
       <FilterBar>
-          <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
-            <Search className="size-4 text-zinc-400" />
-            <span className="px-3 text-sm text-zinc-500">
-              Filtros de inteligência de crescimento
-            </span>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3 lg:w-[540px]">
-            <FilterSelect
-              label="Prioridade"
-              onChange={setPriority}
-              options={filterOptions.priorities}
-              value={priority}
-            />
-            <FilterSelect
-              label="Categoria"
-              onChange={setCategory}
-              options={filterOptions.categories}
-              value={category}
-            />
-            <FilterSelect
-              label="Status"
-              onChange={setStatus}
-              options={filterOptions.statuses}
-              value={status}
-            />
-          </div>
+        <FilterLabel text="Filtros estratégicos" />
+        <div className="grid gap-3 sm:grid-cols-3 lg:w-[540px]">
+          <FilterSelect
+            label="Prioridade"
+            onChange={setStrategicPriority}
+            options={strategicFilterOptions.priorities}
+            value={strategicPriority}
+          />
+          <FilterSelect
+            label="Categoria"
+            onChange={setStrategicCategory}
+            options={strategicFilterOptions.categories}
+            value={strategicCategory}
+          />
+          <FilterSelect
+            label="Status"
+            onChange={setStrategicStatus}
+            options={strategicFilterOptions.statuses}
+            value={strategicStatus}
+          />
+        </div>
       </FilterBar>
 
-      <section className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="flex flex-col gap-3">
-          <DataTable
-            columns={[
-              {
-                className: "max-w-[360px] font-medium text-zinc-950",
-                header: "Job",
-                render: (row) => row.job,
-              },
-              { header: "Frequência", render: (row) => row.frequency },
-              { header: "Impacto", render: (row) => row.impact },
-              {
-                header: "Prioridade",
-                render: (row) => <Badge value={row.priority} />,
-              },
-            ]}
-            emptyMessage="Nenhum JTBD corresponde aos filtros selecionados."
-            getRowKey={(row) => row.id}
-            isLoading={isLoading}
-            minWidth="760px"
-            rows={paginatedJtbd}
-            title="JTBD"
-          />
-          <Pagination
-            currentPage={jtbdPage}
-            onPageChange={setJtbdPage}
-            totalItems={filteredJtbd.length}
-          />
-        </div>
-
-        <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-zinc-500">
-            Radar de Oportunidades
-          </p>
-          <div className="mt-4 space-y-3">
-            <RadarItem label="Retenção" value={growth.radar.retention} />
-            <RadarItem label="Expansao" value={growth.radar.expansion} />
-            <RadarItem
-              label="Eficiencia operacional"
-              value={growth.radar.operationalEfficiency}
-            />
-          </div>
-        </div>
-      </section>
+      <DataTable
+        columns={[
+          {
+            className: "max-w-[360px] font-medium text-zinc-950",
+            header: "Job",
+            render: (row) => row.job,
+          },
+          { header: "Frequência", render: (row) => row.frequency },
+          { header: "Impacto", render: (row) => row.impact },
+          {
+            header: "Prioridade",
+            render: (row) => <Badge value={row.priority} />,
+          },
+        ]}
+        emptyMessage="Nenhum JTBD corresponde aos filtros selecionados."
+        getRowKey={(row) => row.id}
+        isLoading={isLoading}
+        minWidth="760px"
+        rows={paginatedJtbd}
+        title="JTBD"
+      />
+      <Pagination
+        currentPage={jtbdPage}
+        onPageChange={setJtbdPage}
+        totalItems={filteredJtbd.length}
+      />
 
       <DataTable
         columns={[
@@ -329,7 +439,7 @@ export function GrowthCenter() {
             header: "Prioridade",
             render: (row) => <Badge value={row.priority} />,
           },
-          { header: "Area Responsavel", render: (row) => row.area },
+          { header: "Área Responsável", render: (row) => row.area },
           { header: "Impacto Estimado", render: (row) => row.estimatedImpact },
           { header: "Status", render: (row) => row.status },
         ]}
@@ -346,17 +456,202 @@ export function GrowthCenter() {
         totalItems={filteredRecommendations.length}
       />
 
-      <IntelligentSummary
-        items={[
-          "JTBD críticos mostram dores operacionais com maior potencial estratégico.",
-          "Insights conectados a contas ajudam a priorizar retenção, expansão e eficiência.",
-          "Recomendações ativas devem orientar a cadência entre produto, CS e operações.",
-        ]}
-        meta={[
+      <FilterBar>
+        <FilterLabel text="Filtros de tendências de mercado" />
+        <div className="grid gap-3 sm:grid-cols-3 lg:w-[540px]">
+          <FilterSelect
+            label="Categoria"
+            onChange={setTrendCategory}
+            options={trendFilterOptions.categories}
+            value={trendCategory}
+          />
+          <FilterSelect
+            label="Impacto"
+            onChange={setTrendImpact}
+            options={trendFilterOptions.impacts}
+            value={trendImpact}
+          />
+          <FilterSelect
+            label="Prioridade"
+            onChange={setTrendPriority}
+            options={trendFilterOptions.priorities}
+            value={trendPriority}
+          />
+        </div>
+      </FilterBar>
+
+      <DataTable
+        columns={[
           {
-            label: "Índice de Oportunidade (Opportunity Score) médio",
-            value: metrics[4]?.value ?? 0,
+            className: "font-medium text-zinc-950",
+            header: "Tema",
+            render: (row) => row.theme,
           },
+          { header: "Categoria", render: (row) => row.category },
+          { header: "Direção", render: (row) => row.direction },
+          { header: "Impacto", render: (row) => <Badge value={row.impact} /> },
+          {
+            header: "Prioridade",
+            render: (row) => <Badge value={row.priority} />,
+          },
+          { header: "Fonte", render: (row) => row.source },
+        ]}
+        emptyMessage="Nenhuma tendência corresponde aos filtros selecionados."
+        getRowKey={(row) => row.id}
+        isLoading={isLoading}
+        minWidth="980px"
+        rows={paginatedMarketTrends}
+        title="Tendências de Mercado"
+      />
+      <Pagination
+        currentPage={trendsPage}
+        onPageChange={setTrendsPage}
+        totalItems={filteredMarketTrends.length}
+      />
+
+      <FilterBar>
+        <FilterLabel text="Filtros do radar competitivo" />
+        <div className="grid gap-3 sm:grid-cols-3 lg:w-[540px]">
+          <FilterSelect
+            label="Concorrente"
+            onChange={setCompetitor}
+            options={competitorFilterOptions.competitors}
+            value={competitor}
+          />
+          <FilterSelect
+            label="Categoria"
+            onChange={setCompetitorCategory}
+            options={competitorFilterOptions.categories}
+            value={competitorCategory}
+          />
+          <FilterSelect
+            label="Impacto"
+            onChange={setCompetitorImpact}
+            options={competitorFilterOptions.impacts}
+            value={competitorImpact}
+          />
+        </div>
+      </FilterBar>
+
+      <DataTable
+        columns={[
+          {
+            className: "font-medium text-zinc-950",
+            header: "Concorrente",
+            render: (row) => row.competitor,
+          },
+          { header: "Categoria", render: (row) => row.category },
+          {
+            className: "max-w-[360px] leading-6",
+            header: "Movimento",
+            render: (row) => row.movement,
+          },
+          { header: "Impacto", render: (row) => <Badge value={row.impact} /> },
+          { header: "Data", render: (row) => row.date },
+          { header: "Fonte", render: (row) => row.source },
+        ]}
+        emptyMessage="Nenhum movimento competitivo corresponde aos filtros selecionados."
+        getRowKey={(row) => row.id}
+        isLoading={isLoading}
+        minWidth="980px"
+        rows={paginatedCompetitiveRadar}
+        title="Radar Competitivo"
+      />
+      <Pagination
+        currentPage={competitivePage}
+        onPageChange={setCompetitivePage}
+        totalItems={filteredCompetitiveRadar.length}
+      />
+
+      <FilterBar>
+        <FilterLabel text="Filtros de benchmarks" />
+        <div className="grid gap-3 sm:grid-cols-3 lg:w-[540px]">
+          <FilterSelect
+            label="Categoria"
+            onChange={setBenchmarkCategory}
+            options={benchmarkFilterOptions.categories}
+            value={benchmarkCategory}
+          />
+          <FilterSelect
+            label="Status comparativo"
+            onChange={setBenchmarkStatus}
+            options={benchmarkFilterOptions.statuses}
+            value={benchmarkStatus}
+          />
+          <FilterSelect
+            label="Prioridade"
+            onChange={setBenchmarkPriority}
+            options={benchmarkFilterOptions.priorities}
+            value={benchmarkPriority}
+          />
+        </div>
+      </FilterBar>
+
+      <DataTable
+        columns={[
+          {
+            className: "font-medium text-zinc-950",
+            header: "Métrica",
+            render: (row) => row.metric,
+          },
+          { header: "Categoria", render: (row) => row.category },
+          { header: "Valor KV Partners", render: (row) => row.kvValue },
+          { header: "Valor Mercado", render: (row) => row.marketValue },
+          { header: "Diferença", render: (row) => row.difference },
+          {
+            header: "Status Comparativo",
+            render: (row) => <Badge value={row.comparativeStatus} />,
+          },
+          { header: "Impacto", render: (row) => <Badge value={row.impact} /> },
+          {
+            header: "Prioridade",
+            render: (row) => <Badge value={row.priority} />,
+          },
+        ]}
+        emptyMessage="Nenhum benchmark corresponde aos filtros selecionados."
+        getRowKey={(row) => row.id}
+        isLoading={isLoading}
+        minWidth="1180px"
+        rows={paginatedBenchmarks}
+        title="Benchmark de Mercado"
+      />
+      <Pagination
+        currentPage={benchmarksPage}
+        onPageChange={setBenchmarksPage}
+        totalItems={filteredBenchmarks.length}
+      />
+
+      <DataTable
+        columns={[
+          {
+            className: "font-medium text-zinc-950",
+            header: "Área",
+            render: (row) => row.area,
+          },
+          { header: "Sinais", render: (row) => row.value },
+          {
+            className: "max-w-[420px] leading-6",
+            header: "Leitura estratégica",
+            render: (row) => row.description,
+          },
+        ]}
+        emptyMessage="Nenhum sinal de oportunidade encontrado."
+        getRowKey={(row) => row.area}
+        isLoading={isLoading}
+        minWidth="760px"
+        rows={opportunityRadarRows}
+        title="Radar de Oportunidades"
+      />
+
+      <IntelligentSummary
+        items={summaryItems}
+        meta={[
+          { label: "JTBD", value: growth.jtbd.length },
+          { label: "Insights", value: growth.insights.length },
+          { label: "Recomendações", value: growth.recommendations.length },
+          { label: "Tendências", value: growth.marketTrends.length },
+          { label: "Concorrentes", value: growth.competitiveRadar.length },
+          { label: "Benchmarks", value: growth.benchmarks.length },
           { label: "Fonte", value: sourceLabel(growth.source) },
         ]}
       />
@@ -372,8 +667,17 @@ function Badge({ value }: { value: string }) {
         badgeColor(value),
       )}
     >
-      {value}
+      {value || "Sem dado"}
     </span>
+  );
+}
+
+function FilterLabel({ text }: { text: string }) {
+  return (
+    <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
+      <Search className="size-4 text-zinc-400" />
+      <span className="px-3 text-sm text-zinc-500">{text}</span>
+    </div>
   );
 }
 
@@ -406,11 +710,67 @@ function FilterSelect({
   );
 }
 
-function RadarItem({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-3">
-      <span className="text-sm font-medium text-zinc-700">{label}</span>
-      <span className="text-xl font-semibold text-zinc-950">{value}</span>
-    </div>
+function buildSummaryItems(growth: GrowthResponse) {
+  const criticalTrends = topLabels(
+    growth.marketTrends.filter(
+      (trend) => isHighPriority(trend.priority) || isHighPriority(trend.impact),
+    ),
+    (trend) => trend.theme,
+    3,
   );
+  const activeCompetitors = topLabels(
+    growth.competitiveRadar,
+    (row) => row.competitor,
+    3,
+  );
+  const benchmarkOpportunity = growth.benchmarks.find((benchmark) =>
+    normalize(benchmark.comparativeStatus).includes("abaixo"),
+  );
+  const retentionBenchmark = growth.benchmarks.find((benchmark) =>
+    normalize(`${benchmark.metric} ${benchmark.category}`).includes("retenc"),
+  );
+  const timeToValueBenchmark = growth.benchmarks.find((benchmark) =>
+    normalize(benchmark.metric).includes("time to value"),
+  );
+
+  return [
+    criticalTrends.length > 0
+      ? `Tendências críticas identificadas: ${criticalTrends.join(", ")}.`
+      : "Nenhuma tendência crítica foi identificada nos dados atuais.",
+    activeCompetitors.length > 0
+      ? `Concorrentes mais ativos: ${activeCompetitors.join(", ")}.`
+      : "Nenhum movimento competitivo foi identificado nos dados atuais.",
+    benchmarkOpportunity
+      ? `Benchmark indica oportunidade de melhoria em ${benchmarkOpportunity.metric}.`
+      : "Benchmarks não indicam gaps críticos de mercado no momento.",
+    retentionBenchmark &&
+    normalize(retentionBenchmark.comparativeStatus).includes("acima")
+      ? "Retenção está acima da média do mercado."
+      : "Retenção deve seguir monitorada frente aos benchmarks de mercado.",
+    timeToValueBenchmark &&
+    normalize(timeToValueBenchmark.comparativeStatus).includes("acima")
+      ? "Time To Value está acima do benchmark e merece atenção."
+      : "Time To Value não apresenta alerta acima do benchmark nos dados atuais.",
+  ];
+}
+
+function topLabels<T>(
+  rows: T[],
+  getLabel: (row: T) => string,
+  limit: number,
+) {
+  const counts = new Map<string, number>();
+
+  for (const row of rows) {
+    const label = getLabel(row);
+
+    if (label) {
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+  }
+
+  return Array.from(counts.entries())
+    .sort((first, second) => second[1] - first[1])
+    .slice(0, limit)
+    .map(([label]) => label);
 }

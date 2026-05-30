@@ -1,7 +1,10 @@
 import { parseCsvWithMetadata } from "@/lib/google-sheets/csv";
 import type {
+  GrowthBenchmarkRow,
+  GrowthCompetitiveRadarRow,
   GrowthInsightRow,
   GrowthJtbdRow,
+  GrowthMarketTrendRow,
   GrowthRadar,
   GrowthRecommendationRow,
   GrowthResponse,
@@ -49,6 +52,15 @@ const readSheet = async (sheetName: string) => {
   }
 
   return parseCsvWithMetadata(await response.text()).records;
+};
+
+const readOptionalSheet = async (sheetName: string) => {
+  try {
+    return await readSheet(sheetName);
+  } catch (error) {
+    console.warn(`Failed to read optional growth sheet ${sheetName}`, error);
+    return [];
+  }
 };
 
 const buildAccountNames = (accounts: SheetRow[]) =>
@@ -123,6 +135,9 @@ const buildRadar = (
   jtbd: GrowthJtbdRow[],
   insights: GrowthInsightRow[],
   recommendations: GrowthRecommendationRow[],
+  marketTrends: GrowthMarketTrendRow[],
+  competitiveRadar: GrowthCompetitiveRadarRow[],
+  benchmarks: GrowthBenchmarkRow[],
 ) => {
   const radar: GrowthRadar = {
     expansion: 0,
@@ -134,6 +149,9 @@ const buildRadar = (
     ...jtbd.map((row) => `${row.job} ${row.category}`),
     ...insights.map((row) => `${row.insight} ${row.category}`),
     ...recommendations.map((row) => row.recommendation),
+    ...marketTrends.map((row) => `${row.theme} ${row.category}`),
+    ...competitiveRadar.map((row) => `${row.movement} ${row.category}`),
+    ...benchmarks.map((row) => `${row.metric} ${row.category}`),
   ]) {
     radar[classifyRadar(item)] += 1;
   }
@@ -144,8 +162,11 @@ const buildRadar = (
 export async function getGrowthFromSheets(): Promise<GrowthResponse> {
   if (!spreadsheetId()) {
     return {
+      benchmarks: [],
+      competitiveRadar: [],
       insights: [],
       jtbd: [],
+      marketTrends: [],
       radar: { expansion: 0, operationalEfficiency: 0, retention: 0 },
       recommendations: [],
       source: "not-configured",
@@ -153,12 +174,23 @@ export async function getGrowthFromSheets(): Promise<GrowthResponse> {
   }
 
   try {
-    const [accounts, jtbdRows, insightRows, recommendationRows] =
+    const [
+      accounts,
+      jtbdRows,
+      insightRows,
+      recommendationRows,
+      marketTrendRows,
+      competitiveRadarRows,
+      benchmarkRows,
+    ] =
       await Promise.all([
         readSheet("01_Contas"),
         readSheet("08_MGI_JTBD"),
         readSheet("09_MGI_Insights"),
         readSheet("10_MGI_Recommendations"),
+        readOptionalSheet("11_MGI_Market_Trends"),
+        readOptionalSheet("12_MGI_Competitive_Radar"),
+        readOptionalSheet("13_MGI_Benchmarks"),
       ]);
     const accountNames = buildAccountNames(accounts);
     const categoryAccounts = buildCategoryAccounts(jtbdRows, accountNames);
@@ -210,10 +242,77 @@ export async function getGrowthFromSheets(): Promise<GrowthResponse> {
       }),
     );
 
+    const marketTrends: GrowthMarketTrendRow[] = marketTrendRows.map(
+      (row, index) => ({
+        category: getCell(row, ["categoria", "categoria tendencia"]),
+        direction: getCell(row, ["direcao", "direcao tendencia", "direction"]),
+        id:
+          getCell(row, ["id trend", "id tendencia", "id market trend"]) ||
+          `market-trend-${index + 1}`,
+        impact: getCell(row, ["impacto", "impacto mercado"]),
+        priority: getCell(row, ["prioridade", "nivel prioridade"]),
+        source: getCell(row, ["fonte", "source"]),
+        theme: getCell(row, ["tema", "tema tendencia", "tendencia", "trend"]),
+      }),
+    );
+
+    const competitiveRadar: GrowthCompetitiveRadarRow[] =
+      competitiveRadarRows.map((row, index) => ({
+        category: getCell(row, ["categoria", "categoria movimento"]),
+        competitor: getCell(row, ["concorrente", "competitor"]),
+        date: getCell(row, ["data", "data movimento"]),
+        id:
+          getCell(row, ["id radar", "id competitivo", "id movimento"]) ||
+          `competitive-radar-${index + 1}`,
+        impact: getCell(row, ["impacto", "impacto estimado"]),
+        movement: getCell(row, ["movimento", "movimento competitivo"]),
+        source: getCell(row, ["fonte", "source"]),
+      }));
+
+    const benchmarks: GrowthBenchmarkRow[] = benchmarkRows.map(
+      (row, index) => ({
+        category: getCell(row, ["categoria", "categoria benchmark"]),
+        comparativeStatus: getCell(row, [
+          "status comparativo",
+          "comparativo",
+          "status",
+        ]),
+        difference: getCell(row, ["diferenca", "diferença", "gap"]),
+        id:
+          getCell(row, ["id benchmark", "id metrica", "id benchmark metric"]) ||
+          `benchmark-${index + 1}`,
+        impact: getCell(row, ["impacto", "impacto negocio"]),
+        kvValue: getCell(row, [
+          "valor kv partners",
+          "valor kv",
+          "kv partners",
+          "valor atual",
+        ]),
+        marketValue: getCell(row, [
+          "valor mercado",
+          "valor do mercado",
+          "benchmark mercado",
+          "market value",
+        ]),
+        metric: getCell(row, ["metrica", "métrica", "metric"]),
+        priority: getCell(row, ["prioridade", "nivel prioridade"]),
+      }),
+    );
+
     return {
+      benchmarks,
+      competitiveRadar,
       insights,
       jtbd,
-      radar: buildRadar(jtbd, insights, recommendations),
+      marketTrends,
+      radar: buildRadar(
+        jtbd,
+        insights,
+        recommendations,
+        marketTrends,
+        competitiveRadar,
+        benchmarks,
+      ),
       recommendations,
       source: "google-sheets",
     };
@@ -221,8 +320,11 @@ export async function getGrowthFromSheets(): Promise<GrowthResponse> {
     console.error("Failed to read KV Partners growth sheets", error);
 
     return {
+      benchmarks: [],
+      competitiveRadar: [],
       insights: [],
       jtbd: [],
+      marketTrends: [],
       radar: { expansion: 0, operationalEfficiency: 0, retention: 0 },
       recommendations: [],
       source: "not-configured",

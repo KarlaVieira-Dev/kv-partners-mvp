@@ -46,8 +46,11 @@ const quickQuestions = [
 ];
 
 const emptyGrowth: GrowthResponse = {
+  benchmarks: [],
+  competitiveRadar: [],
   insights: [],
   jtbd: [],
+  marketTrends: [],
   radar: { expansion: 0, operationalEfficiency: 0, retention: 0 },
   recommendations: [],
   source: "not-configured",
