@@ -10,6 +10,7 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -247,6 +248,17 @@ export function LandingPage() {
         </div>
 
         <div className="mt-6 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
+          <div className="relative border-b border-zinc-200 bg-zinc-950">
+            <Image
+              alt="Mockup visual da plataforma Product Intelligence Ecosystem"
+              className="max-h-[360px] w-full object-cover opacity-95"
+              height={720}
+              priority
+              src="/landing/product-intelligence-mockup.png"
+              width={1280}
+            />
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-zinc-950 to-transparent" />
+          </div>
           <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="border-b border-zinc-200 p-5 lg:border-b-0 lg:border-r">
               <div className="flex items-center justify-between gap-4">
