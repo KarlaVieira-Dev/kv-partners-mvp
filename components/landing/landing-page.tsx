@@ -1,27 +1,13 @@
 import {
   ArrowRight,
-  BrainCircuit,
   Check,
-  GitBranch,
   MessageSquareText,
   Sparkles,
-  Target,
 } from "lucide-react";
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const problemSignals = [
-  "Feedback negativo",
-  "Onboarding atrasado",
-  "Acessos negados",
-  "Baixa adoção",
-  "Benchmark abaixo do mercado",
-  "Tendência emergente",
-  "Churn Risk",
-  "Oportunidade de expansão",
-];
 
 const scatteredSignals = [
   "Feedback negativo",
@@ -42,30 +28,11 @@ const orientedDecisions = [
   "Próxima ação sugerida",
 ];
 
-const decisionSteps = [
-  { icon: GitBranch, title: "Sinais" },
-  { icon: BrainCircuit, title: "Contexto" },
-  { icon: Sparkles, title: "Insights" },
-  { icon: Target, title: "Recomendações" },
-  { icon: ArrowRight, title: "Decisão" },
-];
-
-const valueCards = [
-  {
-    icon: GitBranch,
-    text: "Identifique riscos antes do impacto.",
-    title: "Antecipe problemas",
-  },
-  {
-    icon: BrainCircuit,
-    text: "Una operação, cliente, risco e mercado.",
-    title: "Conecte contexto",
-  },
-  {
-    icon: Target,
-    text: "Decida com base em evidências.",
-    title: "Priorize melhor",
-  },
+const resultHighlights = [
+  "Riscos identificados antes do impacto",
+  "Oportunidades identificadas antes da concorrência",
+  "Decisões apoiadas por contexto",
+  "Menos opinião. Mais evidência.",
 ];
 
 export function LandingPage() {
@@ -164,38 +131,16 @@ export function LandingPage() {
             Poucas conseguem transformá-los em vantagem competitiva.
           </h2>
           <p className="mt-5 text-base leading-7 text-zinc-600">
-            Todos os dias sua operação gera sinais.
+            Os dados já existem.
             <br />
-            Feedbacks. Jornadas. Riscos. Mercado.
-            <br />
-            O problema não é a falta de informação.
-            <br />
-            É a dificuldade de conectar contexto suficiente para tomar decisões
-            melhores.
+            As decisões ainda dependem de opinião.
           </p>
-        </div>
-
-        <div className="mx-auto mt-9 max-w-5xl rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {problemSignals.map((signal, index) => (
-              <div
-                className={cn(
-                  "rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-700 shadow-sm transition hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-white",
-                  index % 3 === 1 && "sm:translate-y-3",
-                  index % 4 === 2 && "lg:-translate-y-2",
-                )}
-                key={signal}
-              >
-                {signal}
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
       <section
         className="border-y border-zinc-200 bg-white px-4 py-14 sm:px-6 lg:px-8"
-        id="contexto"
+        id="decisao"
       >
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
@@ -302,74 +247,41 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8" id="decisao">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-sm font-medium text-zinc-500">Jornada</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
-            Da informação à decisão.
-          </h2>
-        </div>
-
-        <div className="mt-9 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
-          <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr] md:items-center">
-            {decisionSteps.map((step, index) => {
-              const Icon = step.icon;
-
-              return (
-                <div className="contents" key={step.title}>
-                  <div className="group rounded-lg border border-zinc-200 bg-zinc-50 p-5 text-center transition hover:-translate-y-1 hover:border-zinc-300 hover:bg-white hover:shadow-sm">
-                    <Icon className="mx-auto size-5 text-zinc-950" />
-                    <p className="mt-3 text-sm font-semibold text-zinc-950">
-                      {step.title}
-                    </p>
-                  </div>
-                  {index < decisionSteps.length - 1 ? (
-                    <div className="flex justify-center text-zinc-400">
-                      <ArrowRight className="hidden size-5 md:block" />
-                      <div className="h-5 w-px bg-zinc-200 md:hidden" />
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
       <section
-        className="border-y border-zinc-200 bg-white px-4 py-14 sm:px-6 lg:px-8"
+        className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
         id="valor"
       >
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl">
-          <p className="text-sm font-medium text-zinc-500">Valor gerado</p>
+        <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div>
+            <p className="text-sm font-medium text-zinc-500">Resultado</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
-            O resultado não é um dashboard.
-            <span className="mt-2 block text-zinc-500">
-              É clareza para decidir.
-            </span>
+              Menos reação.
+              <br />
+              Mais antecipação.
           </h2>
+            <p className="mt-5 text-base leading-7 text-zinc-600">
+              Empresas competitivas não tomam decisões apenas olhando para o
+              passado.
+              <br />
+              <br />
+              Elas identificam riscos antes do impacto. Detectam oportunidades
+              antes da concorrência. E transformam sinais dispersos em vantagem
+              competitiva.
+            </p>
           </div>
 
-        <div className="mt-8 grid gap-4 lg:grid-cols-3">
-          {valueCards.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <article
-                className="rounded-lg border border-zinc-200 bg-zinc-50 p-6 shadow-sm transition hover:-translate-y-1 hover:bg-white hover:shadow-md"
-                key={item.title}
-              >
-                <Icon className="size-5 text-zinc-950" />
-                <h3 className="mt-6 text-xl font-semibold text-zinc-950">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-zinc-600">
-                  {item.text}
-                </p>
-              </article>
-            );
-          })}
+          <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+            <div className="grid gap-3">
+              {resultHighlights.map((highlight) => (
+                <div
+                  className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-700"
+                  key={highlight}
+                >
+                  <Check className="size-4 text-emerald-600" />
+                  <span>{highlight}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -380,7 +292,8 @@ export function LandingPage() {
             A próxima decisão não deveria depender de opinião.
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">
-            Transforme sinais operacionais em inteligência estratégica.
+            Veja como sinais operacionais podem ser transformados em
+            inteligência estratégica.
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -391,16 +304,6 @@ export function LandingPage() {
               href="/executive-center"
             >
               Ver Demonstração
-              <ArrowRight className="size-4" />
-            </Link>
-            <Link
-              className={cn(
-                buttonVariants({ size: "lg", variant: "outline" }),
-                "border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white",
-              )}
-              href="/executive-center"
-            >
-              Explorar Plataforma
               <ArrowRight className="size-4" />
             </Link>
           </div>
