@@ -8,6 +8,9 @@ import type {
   ExecutiveAccountsResponse,
   FeedbackRow,
   FeedbacksResponse,
+  GrowthBenchmarkRow,
+  GrowthMarketTrendRow,
+  GrowthRecommendationRow,
   GrowthResponse,
   OnboardingRow,
   OnboardingsResponse,
@@ -37,12 +40,23 @@ type CopilotAnswer = {
   summary: string;
 };
 
+type ExecutiveBriefing = {
+  accountsAtRisk: number;
+  averageHealth: number;
+  averageRisk: number;
+  belowBenchmark: number;
+  mainRecommendation: string;
+  opportunities: number;
+  relevantTrends: number;
+};
+
 const quickQuestions = [
-  "Contas em risco",
-  "Onboardings críticos",
-  "Feedbacks críticos",
-  "Oportunidades de expansão",
-  "Recomendações prioritárias",
+  "Onde estamos abaixo do mercado?",
+  "Quais contas precisam de atenção?",
+  "O que os concorrentes estão fazendo?",
+  "Quais tendências merecem investimento?",
+  "Onde devemos investir nos próximos 90 dias?",
+  "Qual funcionalidade possui maior oportunidade?",
 ];
 
 const emptyGrowth: GrowthResponse = {
@@ -62,14 +76,160 @@ const normalize = (value: string) =>
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
+const average = (values: number[]) => {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  return Math.round(
+    values.reduce((total, value) => total + value, 0) / values.length,
+  );
+};
+
 const topBy = <T,>(items: T[], score: (item: T) => number, limit = 5) =>
-  [...items].sort((first, second) => score(second) - score(first)).slice(0, limit);
+  [...items]
+    .sort((first, second) => score(second) - score(first))
+    .slice(0, limit);
+
+const isHighPriority = (value: string) => {
+  const normalized = normalize(value);
+  return (
+    normalized.includes("alta") ||
+    normalized.includes("crit") ||
+    normalized.includes("alto")
+  );
+};
+
+const isBelowMarket = (benchmark: GrowthBenchmarkRow) =>
+  normalize(benchmark.comparativeStatus).includes("abaixo") ||
+  benchmark.difference.trim().startsWith("-");
+
+const recommendationScore = (recommendation: GrowthRecommendationRow) =>
+  recommendation.opportunityScore +
+  (isHighPriority(recommendation.priority) ? 20 : 0);
+
+const trendScore = (trend: GrowthMarketTrendRow) =>
+  (isHighPriority(trend.priority) ? 2 : 0) +
+  (isHighPriority(trend.impact) ? 2 : 0);
+
+function buildExecutiveBriefing(data: CopilotData): ExecutiveBriefing {
+  const belowBenchmark = data.growth.benchmarks.filter(isBelowMarket);
+  const priorityRecommendation = topBy(
+    data.growth.recommendations,
+    recommendationScore,
+    1,
+  )[0];
+  const priorityBenchmark = belowBenchmark[0];
+
+  return {
+    accountsAtRisk: data.risks.filter(
+      (risk) =>
+        risk.riskScore >= 70 ||
+        normalize(risk.riskLevel).includes("alto") ||
+        normalize(risk.riskLevel).includes("crit"),
+    ).length,
+    averageHealth: average(data.risks.map((risk) => risk.healthScore)),
+    averageRisk: average(data.risks.map((risk) => risk.riskScore)),
+    belowBenchmark: belowBenchmark.length,
+    mainRecommendation:
+      priorityRecommendation?.recommendation ||
+      (priorityBenchmark
+        ? `Atuar sobre ${priorityBenchmark.metric} para reduzir o gap frente ao mercado.`
+        : "Simplificar onboarding inicial para reduzir risco operacional e melhorar retenção."),
+    opportunities:
+      data.growth.recommendations.length +
+      data.growth.marketTrends.length +
+      data.growth.benchmarks.filter(isBelowMarket).length,
+    relevantTrends: data.growth.marketTrends.filter(
+      (trend) => trendScore(trend) > 0,
+    ).length,
+  };
+}
 
 function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
   const normalizedQuestion = normalize(question);
 
-  if (normalizedQuestion.includes("onboarding")) {
-    const criticalOnboardings = data.onboardings.filter(
+  if (
+    normalizedQuestion.includes("abaixo do mercado") ||
+    normalizedQuestion.includes("benchmark")
+  ) {
+    const benchmarks = data.growth.benchmarks.filter(isBelowMarket);
+
+    return {
+      accounts: [],
+      data: benchmarks.map(
+        (benchmark) =>
+          `${benchmark.metric}: KV Partners ${benchmark.kvValue} vs Mercado ${benchmark.marketValue}; diferença ${benchmark.difference}; impacto ${benchmark.impact}.`,
+      ),
+      recommendations: benchmarks.map(
+        (benchmark) =>
+          `Próximo passo: priorizar ${benchmark.metric} em ${benchmark.category}. ${benchmark.observation}`,
+      ),
+      summary:
+        benchmarks.length > 0
+          ? `${benchmarks.length} métrica(s) estão abaixo do mercado e indicam gaps estratégicos de execução.`
+          : "Nenhum benchmark abaixo do mercado foi identificado nos dados atuais.",
+    };
+  }
+
+  if (
+    normalizedQuestion.includes("concorrente") ||
+    normalizedQuestion.includes("competitivo")
+  ) {
+    const movements = topBy(
+      data.growth.competitiveRadar,
+      (movement) => (isHighPriority(movement.impact) ? 2 : 1),
+      8,
+    );
+
+    return {
+      accounts: [],
+      data: movements.map(
+        (movement) =>
+          `${movement.competitor}: ${movement.movement} (${movement.category}, impacto ${movement.impact}).`,
+      ),
+      recommendations: movements.map(
+        (movement) =>
+          `Relevância: acompanhar ${movement.category} e comparar resposta da KV Partners com o movimento de ${movement.competitor}.`,
+      ),
+      summary:
+        movements.length > 0
+          ? `Foram identificados ${movements.length} movimentos competitivos relevantes para monitoramento executivo.`
+          : "Nenhum movimento competitivo foi encontrado nos dados atuais.",
+    };
+  }
+
+  if (
+    normalizedQuestion.includes("tendencia") ||
+    normalizedQuestion.includes("tendências")
+  ) {
+    const trends = topBy(data.growth.marketTrends, trendScore, 8);
+
+    return {
+      accounts: [],
+      data: trends.map(
+        (trend) =>
+          `${trend.theme}: impacto ${trend.impact}, prioridade ${trend.priority}, direção ${trend.direction}.`,
+      ),
+      recommendations: trends.map(
+        (trend) =>
+          `Justificativa: ${trend.theme} aparece em ${trend.category} com fonte ${trend.source || "não informada"}.`,
+      ),
+      summary:
+        trends.length > 0
+          ? `${trends.length} tendência(s) merecem acompanhamento para orientar decisões de produto, risco e crescimento.`
+          : "Nenhuma tendência de mercado foi encontrada nos dados atuais.",
+    };
+  }
+
+  if (
+    normalizedQuestion.includes("contas precisam") ||
+    normalizedQuestion.includes("atenção") ||
+    normalizedQuestion.includes("atencao") ||
+    normalizedQuestion.includes("risco")
+  ) {
+    const riskyAccounts = topBy(data.risks, (risk) => risk.riskScore, 6);
+    const delayedOnboardings = data.onboardings.filter(
       (onboarding) =>
         onboarding.risk === "Alto" ||
         onboarding.daysInProgress >= 14 ||
@@ -77,50 +237,77 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
     );
 
     return {
-      accounts: criticalOnboardings.map((onboarding) => onboarding.account),
-      data: criticalOnboardings.map(
-        (onboarding) =>
-          `${onboarding.account}: ${onboarding.progress}% em ${onboarding.daysInProgress} dias (${onboarding.status})`,
-      ),
-      recommendations: criticalOnboardings.map(
-        (onboarding) => onboarding.nextAction,
+      accounts: riskyAccounts.map((risk) => risk.accountName),
+      data: riskyAccounts.map((risk) => {
+        const onboarding = delayedOnboardings.find(
+          (row) => row.accountId === risk.accountId,
+        );
+        const onboardingContext = onboarding
+          ? ` Onboarding: ${onboarding.progress}% em ${onboarding.daysInProgress} dias.`
+          : "";
+
+        return `${risk.accountName}: score ${risk.riskScore}, ${risk.riskLevel}. Motivo: ${risk.mainReason}.${onboardingContext}`;
+      }),
+      recommendations: riskyAccounts.map(
+        (risk) => `Ação sugerida: ${risk.suggestedAction}`,
       ),
       summary:
-        criticalOnboardings.length > 0
-          ? `${criticalOnboardings.length} onboarding(s) exigem atenção por risco alto, baixa conclusão ou tempo elevado.`
-          : "Nenhum onboarding crítico foi identificado com as regras atuais.",
-    };
-  }
-
-  if (normalizedQuestion.includes("feedback")) {
-    const criticalFeedbacks = data.feedbacks.filter((feedback) => {
-      const priority = normalize(feedback.priority);
-      const sentiment = normalize(feedback.sentiment);
-      return priority.includes("crit") || sentiment.includes("negativo");
-    });
-
-    return {
-      accounts: criticalFeedbacks.map((feedback) => feedback.accountName),
-      data: criticalFeedbacks.map(
-        (feedback) =>
-          `${feedback.accountName}: ${feedback.theme} (${feedback.sentiment}, ${feedback.priority})`,
-      ),
-      recommendations: criticalFeedbacks.map((feedback) => feedback.summary),
-      summary:
-        criticalFeedbacks.length > 0
-          ? `${criticalFeedbacks.length} feedback(s) críticos ou negativos indicam fricções relevantes na experiência.`
-          : "Nenhum feedback crítico foi identificado com as regras atuais.",
+        riskyAccounts.length > 0
+          ? `${riskyAccounts.length} conta(s) combinam sinais de risco, saúde e onboarding para priorização executiva.`
+          : "Nenhuma conta com atenção prioritária foi identificada.",
     };
   }
 
   if (
-    normalizedQuestion.includes("oportunidade") ||
-    normalizedQuestion.includes("expansao") ||
-    normalizedQuestion.includes("recomend")
+    normalizedQuestion.includes("investir") ||
+    normalizedQuestion.includes("90 dias")
+  ) {
+    const benchmarks = data.growth.benchmarks.filter(isBelowMarket).slice(0, 3);
+    const trends = topBy(data.growth.marketTrends, trendScore, 3);
+    const recommendations = topBy(
+      data.growth.recommendations,
+      recommendationScore,
+      3,
+    );
+    const jobs = data.growth.jtbd.filter((job) =>
+      isHighPriority(job.priority),
+    );
+
+    return {
+      accounts: data.growth.insights
+        .map((insight) => insight.accountName)
+        .filter(Boolean)
+        .slice(0, 5),
+      data: [
+        ...benchmarks.map(
+          (benchmark) =>
+            `Benchmark: ${benchmark.metric} está ${benchmark.difference} vs mercado (${benchmark.impact}).`,
+        ),
+        ...trends.map(
+          (trend) =>
+            `Tendência: ${trend.theme} (${trend.impact}, ${trend.priority}).`,
+        ),
+        ...jobs.slice(0, 3).map((job) => `JTBD: ${job.job} (${job.impact}).`),
+      ],
+      recommendations: recommendations.map(
+        (recommendation) =>
+          `Investir em ${recommendation.area}: ${recommendation.recommendation}. Impacto esperado: ${recommendation.estimatedImpact}. Próximo passo: converter em iniciativa de 90 dias.`,
+      ),
+      summary:
+        recommendations.length > 0
+          ? `Recomendação: priorizar ${recommendations[0].area} nos próximos 90 dias combinando benchmarks, tendências, JTBD, insights e recomendações.`
+          : "Não há recomendações estratégicas suficientes para priorização de investimento.",
+    };
+  }
+
+  if (
+    normalizedQuestion.includes("funcionalidade") ||
+    normalizedQuestion.includes("maior oportunidade")
   ) {
     const recommendations = topBy(
       data.growth.recommendations,
-      (recommendation) => recommendation.opportunityScore,
+      recommendationScore,
+      5,
     );
 
     return {
@@ -130,36 +317,97 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
         .slice(0, 5),
       data: recommendations.map(
         (recommendation) =>
-          `${recommendation.recommendation}: score ${recommendation.opportunityScore} (${recommendation.priority})`,
+          `${recommendation.recommendation}: Índice de Oportunidade (Opportunity Score) ${recommendation.opportunityScore}, prioridade ${recommendation.priority}.`,
       ),
       recommendations: recommendations.map(
         (recommendation) =>
-          `${recommendation.area}: ${recommendation.estimatedImpact} impacto estimado`,
+          `Impacto esperado: ${recommendation.estimatedImpact}. Próximo passo: envolver ${recommendation.area}.`,
       ),
       summary:
         recommendations.length > 0
-          ? `As maiores oportunidades estão concentradas em ${recommendations.length} recomendação(ões) estratégicas priorizadas.`
-          : "Nenhuma recomendação estratégica foi encontrada nos dados atuais.",
+          ? `A maior oportunidade aparece em ${recommendations[0].area}: ${recommendations[0].recommendation}.`
+          : "Nenhuma oportunidade funcional foi encontrada nas recomendações atuais.",
     };
   }
 
-  const riskyAccounts = topBy(
-    data.risks,
-    (risk) => risk.riskScore,
-  ).filter((risk) => risk.riskScore >= 50 || normalize(risk.riskLevel).includes("alto"));
+  const recommendations = topBy(
+    data.growth.recommendations,
+    recommendationScore,
+    5,
+  );
 
   return {
-    accounts: riskyAccounts.map((risk) => risk.accountName),
-    data: riskyAccounts.map(
-      (risk) =>
-        `${risk.accountName}: Índice de Risco (Risk Score) ${risk.riskScore}, Índice de Saúde (Health Score) ${risk.healthScore}, ${risk.riskLevel}`,
+    accounts: data.accounts.map((account) => account.account).slice(0, 5),
+    data: [
+      `JTBD monitorados: ${data.growth.jtbd.length}`,
+      `Insights estratégicos: ${data.growth.insights.length}`,
+      `Recomendações: ${data.growth.recommendations.length}`,
+      `Tendências: ${data.growth.marketTrends.length}`,
+      `Movimentos competitivos: ${data.growth.competitiveRadar.length}`,
+      `Benchmarks: ${data.growth.benchmarks.length}`,
+    ],
+    recommendations: recommendations.map(
+      (recommendation) =>
+        `${recommendation.recommendation} (${recommendation.priority}, ${recommendation.estimatedImpact})`,
     ),
-    recommendations: riskyAccounts.map((risk) => risk.suggestedAction),
     summary:
-      riskyAccounts.length > 0
-        ? `${riskyAccounts.length} conta(s) aparecem com maior exposição de risco e devem ser priorizadas.`
-        : "Nenhuma conta com risco relevante foi identificada com as regras atuais.",
+      "O Copilot consolidou os módulos do ecossistema KV Partners e está pronto para responder perguntas executivas multi-fonte.",
   };
+}
+
+function buildSummaryItems(data: CopilotData) {
+  const trends = topLabels(
+    data.growth.marketTrends.filter((trend) => trendScore(trend) > 0),
+    (trend) => trend.theme,
+    3,
+  );
+  const competitors = topLabels(
+    data.growth.competitiveRadar,
+    (row) => row.competitor,
+    3,
+  );
+  const benchmark = data.growth.benchmarks.find(isBelowMarket);
+  const recommendation = topBy(
+    data.growth.recommendations,
+    recommendationScore,
+    1,
+  )[0];
+
+  return [
+    trends.length > 0
+      ? `Tendências críticas identificadas: ${trends.join(", ")}.`
+      : "Nenhuma tendência crítica foi identificada nos dados atuais.",
+    competitors.length > 0
+      ? `Concorrentes mais ativos: ${competitors.join(", ")}.`
+      : "Nenhum movimento competitivo foi identificado nos dados atuais.",
+    benchmark
+      ? `Benchmark indica oportunidade de melhoria em ${benchmark.metric}.`
+      : "Benchmarks não indicam gaps críticos de mercado no momento.",
+    recommendation
+      ? `Recomendação executiva: ${recommendation.recommendation}`
+      : "Recomendações estratégicas ainda não possuem priorização suficiente.",
+  ];
+}
+
+function topLabels<T>(
+  rows: T[],
+  getLabel: (row: T) => string,
+  limit: number,
+) {
+  const counts = new Map<string, number>();
+
+  for (const row of rows) {
+    const label = getLabel(row);
+
+    if (label) {
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+  }
+
+  return Array.from(counts.entries())
+    .sort((first, second) => second[1] - first[1])
+    .slice(0, limit)
+    .map(([label]) => label);
 }
 
 export function AICopilotCenter() {
@@ -171,7 +419,9 @@ export function AICopilotCenter() {
     risks: [],
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [question, setQuestion] = useState("Quais contas possuem maior risco?");
+  const [question, setQuestion] = useState(
+    "Onde devemos investir nos próximos 90 dias?",
+  );
 
   useEffect(() => {
     async function loadCopilotData() {
@@ -198,7 +448,13 @@ export function AICopilotCenter() {
         setData({
           accounts: accounts.accounts,
           feedbacks: feedbacks.feedbacks,
-          growth,
+          growth: {
+            ...emptyGrowth,
+            ...growth,
+            benchmarks: growth.benchmarks ?? [],
+            competitiveRadar: growth.competitiveRadar ?? [],
+            marketTrends: growth.marketTrends ?? [],
+          },
           onboardings: onboardings.onboardings,
           risks: risks.risks,
         });
@@ -211,27 +467,34 @@ export function AICopilotCenter() {
   }, []);
 
   const answer = useMemo(() => buildAnswer(question, data), [data, question]);
+  const briefing = useMemo(() => buildExecutiveBriefing(data), [data]);
+  const summaryItems = useMemo(() => buildSummaryItems(data), [data]);
   const metrics = useMemo(
     () => [
       {
-        detail: "Contexto de contas",
+        detail: "Contas em /api/accounts",
         label: "Contas monitoradas",
         value: data.accounts.length,
       },
       {
-        detail: "Sinais de risco disponiveis",
-        label: "Riscos analisados",
-        value: data.risks.length,
+        detail: "Benchmarks abaixo do mercado",
+        label: "Gaps de mercado",
+        value: data.growth.benchmarks.filter(isBelowMarket).length,
       },
       {
-        detail: "Jornadas em acompanhamento",
-        label: "Onboardings lidos",
-        value: data.onboardings.length,
+        detail: "Tendências e radar competitivo",
+        label: "Sinais externos",
+        value:
+          data.growth.marketTrends.length +
+          data.growth.competitiveRadar.length,
       },
       {
-        detail: "Voz do cliente",
-        label: "Feedbacks lidos",
-        value: data.feedbacks.length,
+        detail: "JTBD, insights e recomendações",
+        label: "Sinais estratégicos",
+        value:
+          data.growth.jtbd.length +
+          data.growth.insights.length +
+          data.growth.recommendations.length,
       },
     ],
     [data],
@@ -250,9 +513,9 @@ export function AICopilotCenter() {
               AI Copilot
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-              Faça perguntas estratégicas sobre risco de contas, onboarding,
-              feedbacks e oportunidades de crescimento usando os dados atuais
-              da KV Partners.
+              Faça perguntas executivas sobre contas, onboarding, feedbacks,
+              riscos, JTBD, insights, recomendações, tendências, concorrentes e
+              benchmarks da KV Partners.
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
@@ -262,6 +525,8 @@ export function AICopilotCenter() {
         </div>
       </section>
 
+      <ExecutiveBriefingPanel briefing={briefing} isLoading={isLoading} />
+
       <KPIGrid isLoading={isLoading} metrics={metrics} />
 
       <FilterBar>
@@ -270,7 +535,7 @@ export function AICopilotCenter() {
             className="text-sm font-medium text-zinc-500"
             htmlFor="question"
           >
-            Pergunta
+            Pergunta estratégica
           </label>
           <div className="mt-2 flex flex-col gap-3 sm:flex-row">
             <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
@@ -279,7 +544,7 @@ export function AICopilotCenter() {
                 className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
                 id="question"
                 onChange={(event) => setQuestion(event.target.value)}
-                placeholder="Quais contas possuem maior risco?"
+                placeholder="Onde devemos investir nos próximos 90 dias?"
                 value={question}
               />
             </div>
@@ -287,7 +552,7 @@ export function AICopilotCenter() {
         </div>
       </FilterBar>
 
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {quickQuestions.map((quickQuestion) => (
           <button
             className="rounded-lg border border-zinc-200 bg-white p-4 text-left text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
@@ -334,7 +599,7 @@ export function AICopilotCenter() {
         <AnswerList items={paginatedRows} title="Dados encontrados" />
         <AnswerList
           items={answer.recommendations}
-          title="Recomendações relacionadas"
+          title="Recomendações e próximos passos"
         />
       </section>
 
@@ -345,17 +610,70 @@ export function AICopilotCenter() {
       />
 
       <IntelligentSummary
-        items={[
-          "O Copilot ainda opera por regras e consultas sobre os dados reais disponíveis.",
-          "As respostas combinam sinais de risco, onboarding, feedback e crescimento sem chamada a IA externa.",
-          "A próxima evolução natural é conectar o motor a uma camada generativa com contexto controlado.",
-        ]}
+        items={summaryItems}
         meta={[
-          { label: "Pergunta ativa", value: question },
-          { label: "Dados encontrados", value: answer.data.length },
+          { label: "JTBD", value: data.growth.jtbd.length },
+          { label: "Insights", value: data.growth.insights.length },
+          { label: "Recomendações", value: data.growth.recommendations.length },
+          { label: "Tendências", value: data.growth.marketTrends.length },
+          { label: "Concorrentes", value: data.growth.competitiveRadar.length },
+          { label: "Benchmarks", value: data.growth.benchmarks.length },
         ]}
       />
     </div>
+  );
+}
+
+function ExecutiveBriefingPanel({
+  briefing,
+  isLoading,
+}: {
+  briefing: ExecutiveBriefing;
+  isLoading: boolean;
+}) {
+  const items = [
+    { label: "Saúde Média", value: briefing.averageHealth },
+    { label: "Risco Médio", value: briefing.averageRisk },
+    { label: "Contas em Risco", value: briefing.accountsAtRisk },
+    { label: "Oportunidades Identificadas", value: briefing.opportunities },
+    { label: "Métricas abaixo do benchmark", value: briefing.belowBenchmark },
+    { label: "Tendências relevantes", value: briefing.relevantTrends },
+  ];
+
+  return (
+    <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-sm font-medium text-zinc-500">
+            Executive Briefing
+          </p>
+          <h2 className="mt-2 text-xl font-semibold text-zinc-950">
+            Visão executiva consolidada
+          </h2>
+        </div>
+        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 lg:max-w-md">
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
+            Recomendação Principal
+          </p>
+          <p className="mt-2 text-sm font-semibold leading-6 text-zinc-950">
+            {isLoading ? "Carregando recomendação..." : briefing.mainRecommendation}
+          </p>
+        </div>
+      </div>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+        {items.map((item) => (
+          <div
+            className="rounded-lg border border-zinc-100 bg-zinc-50 p-3"
+            key={item.label}
+          >
+            <p className="text-xs text-zinc-500">{item.label}</p>
+            <p className="mt-1 text-2xl font-semibold text-zinc-950">
+              {isLoading ? "..." : item.value}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
