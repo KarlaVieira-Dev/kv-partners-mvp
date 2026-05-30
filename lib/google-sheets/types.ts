@@ -73,3 +73,68 @@ export type RisksResponse = {
   risks: RiskRow[];
   source: "google-sheets" | "not-configured";
 };
+
+export type FeedbackRow = {
+  accountId: string;
+  accountName: string;
+  category: string;
+  date: string;
+  id: string;
+  priority: string;
+  sentiment: string;
+  status: string;
+  summary: string;
+  theme: string;
+};
+
+export type FeedbacksResponse = {
+  feedbacks: FeedbackRow[];
+  source: "google-sheets" | "not-configured";
+};
+
+export type GrowthJtbdRow = {
+  accountId: string;
+  accountName: string;
+  category: string;
+  frequency: number;
+  id: string;
+  impact: string;
+  job: string;
+  priority: string;
+  status: string;
+};
+
+export type GrowthInsightRow = {
+  accountName: string;
+  category: string;
+  date: string;
+  id: string;
+  impact: string;
+  insight: string;
+  priority: string;
+  status: string;
+};
+
+export type GrowthRecommendationRow = {
+  area: string;
+  estimatedImpact: string;
+  id: string;
+  opportunityScore: number;
+  priority: string;
+  recommendation: string;
+  status: string;
+};
+
+export type GrowthRadar = {
+  expansion: number;
+  operationalEfficiency: number;
+  retention: number;
+};
+
+export type GrowthResponse = {
+  insights: GrowthInsightRow[];
+  jtbd: GrowthJtbdRow[];
+  radar: GrowthRadar;
+  recommendations: GrowthRecommendationRow[];
+  source: "google-sheets" | "not-configured";
+};

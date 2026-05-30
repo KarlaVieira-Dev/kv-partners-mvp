@@ -1,10 +1,10 @@
-import { WorkspacePlaceholder } from "@/components/dashboard/workspace-placeholder";
+import { FeedbackCenter } from "@/components/dashboard/feedback-center";
 import { AppShell } from "@/components/layout/app-shell";
 
 export default function FeedbackCenterPage() {
   return (
     <AppShell>
-      <WorkspacePlaceholder title="Feedback Center" />
+      <FeedbackCenter />
     </AppShell>
   );
 }
