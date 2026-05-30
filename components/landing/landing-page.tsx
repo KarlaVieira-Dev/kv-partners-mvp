@@ -1,17 +1,9 @@
 import {
   ArrowRight,
-  Bot,
   BrainCircuit,
-  Building2,
-  CheckCircle2,
-  CircleGauge,
   GitBranch,
-  LineChart,
   MessageSquareText,
-  Rocket,
-  ShieldAlert,
   Sparkles,
-  Target,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -20,121 +12,49 @@ import { cn } from "@/lib/utils";
 
 const problemCards = [
   {
-    title: "Onboarding",
-    text: "Não sabemos quais contas estão enfrentando dificuldades.",
+    title: "Dados Isolados",
+    text: "Onboarding, feedbacks, métricas e mercado vivem em sistemas diferentes.",
   },
   {
-    title: "Feedbacks",
-    text: "Não sabemos quais problemas merecem prioridade.",
+    title: "Contexto Perdido",
+    text: "Sinais importantes existem, mas raramente são conectados.",
   },
   {
-    title: "Operação",
-    text: "Riscos são identificados apenas quando já causaram impacto.",
-  },
-  {
-    title: "Mercado",
-    text: "Decisões são tomadas sem considerar tendências e benchmarks.",
-  },
-  {
-    title: "Liderança",
-    text: "Executivos recebem indicadores, mas não recebem recomendações.",
+    title: "Decisões Reativas",
+    text: "Problemas normalmente são identificados apenas depois do impacto.",
   },
 ];
 
 const flowSteps = [
-  {
-    title: "Contas",
-    text: "Base de relacionamento, contexto comercial e status operacional.",
-  },
-  {
-    title: "Onboarding",
-    text: "Jornadas, progresso, prazos e sinais de ativação.",
-  },
-  {
-    title: "Feedbacks",
-    text: "Voz do cliente estruturada por tema, prioridade e sentimento.",
-  },
-  {
-    title: "Identity & Onboarding Intelligence",
-    text: "Camada analítica para risco, saúde, acesso e uso.",
-  },
-  {
-    title: "Market & Growth Intelligence",
-    text: "JTBD, tendências, concorrentes, benchmarks e recomendações.",
-  },
-  {
-    title: "AI Copilot",
-    text: "Assistente executivo que interpreta sinais e sugere decisões.",
-  },
-  {
-    title: "Decisão",
-    text: "Priorização orientada por evidências e contexto consolidado.",
-  },
-];
-
-const ecosystemModules = [
-  {
-    href: "/onboarding-center",
-    icon: Rocket,
-    title: "Account Onboarding",
-    text: "Centraliza onboarding, jornadas e ativação de contas.",
-  },
-  {
-    href: "/feedback-center",
-    icon: MessageSquareText,
-    title: "Feedback Intelligence",
-    text: "Transforma feedbacks em dados estruturados.",
-  },
-  {
-    href: "/risk-center",
-    icon: ShieldAlert,
-    title: "Identity & Onboarding Intelligence",
-    text: "Identifica riscos antes que se tornem problemas.",
-  },
-  {
-    href: "/growth-center",
-    icon: LineChart,
-    title: "Market & Growth Intelligence",
-    text: "Conecta comportamento, mercado e benchmarks.",
-  },
-  {
-    href: "/ai-copilot",
-    icon: Bot,
-    title: "AI Copilot",
-    text: "Traduz sinais complexos em recomendações executivas.",
-  },
+  "Contas",
+  "Onboarding",
+  "Feedback Intelligence",
+  "Identity & Onboarding Intelligence",
+  "Market & Growth Intelligence",
+  "AI Copilot",
+  "Decisão",
 ];
 
 const differentiators = [
   {
     icon: GitBranch,
     title: "Dados Operacionais",
-    text: "Eventos e jornadas.",
+    text: "Eventos, jornadas e comportamento operacional.",
   },
   {
     icon: MessageSquareText,
     title: "Voz do Cliente",
-    text: "Feedbacks estruturados.",
+    text: "Feedbacks estruturados, temas e sentimentos.",
   },
   {
     icon: BrainCircuit,
     title: "Inteligência Preditiva",
-    text: "Riscos e sinais antecipados.",
-  },
-  {
-    icon: LineChart,
-    title: "Inteligência de Mercado",
-    text: "Tendências e benchmarks.",
+    text: "Identificação antecipada de riscos e oportunidades.",
   },
   {
     icon: Sparkles,
     title: "IA Aplicada",
-    text: "Recomendações executivas.",
-  },
-  {
-    icon: Target,
-    title: "Decisão",
-    text: "Ações orientadas por evidências.",
+    text: "Recomendações executivas orientadas por contexto.",
   },
 ];
 
@@ -193,17 +113,17 @@ export function LandingPage() {
             <a className="hover:text-zinc-950" href="#problema">
               Problema
             </a>
-            <a className="hover:text-zinc-950" href="#ecossistema">
-              Ecossistema
+            <a className="hover:text-zinc-950" href="#estrategia">
+              Estratégia
             </a>
-            <a className="hover:text-zinc-950" href="#plataforma">
-              Plataforma
+            <a className="hover:text-zinc-950" href="#demonstracao">
+              Demonstração
             </a>
             <Link
               className={buttonVariants({ size: "sm", variant: "outline" })}
               href="/executive-center"
             >
-              Acessar Demonstração
+              Ver Demonstração
             </Link>
           </nav>
         </div>
@@ -211,7 +131,7 @@ export function LandingPage() {
 
       <section className="relative overflow-hidden bg-zinc-950 text-white">
         <HeroScene />
-        <div className="relative mx-auto flex min-h-[680px] max-w-7xl flex-col justify-end px-4 pb-16 pt-24 sm:px-6 lg:px-8">
+        <div className="relative mx-auto flex min-h-[620px] max-w-7xl flex-col justify-end px-4 pb-14 pt-24 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="flex items-center gap-2 text-sm font-medium text-zinc-300">
               <Sparkles className="size-4" />
@@ -220,13 +140,16 @@ export function LandingPage() {
             <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">
               Product Intelligence Ecosystem
             </h1>
-            <p className="mt-5 text-xl font-medium text-zinc-200">
-              Transformando sinais operacionais em decisões estratégicas.
+            <p className="mt-5 max-w-2xl text-xl font-medium leading-8 text-zinc-200">
+              Dados mostram o que aconteceu.
+              <br />
+              Inteligência explica por quê.
+              <br />
+              IA sugere o que fazer.
             </p>
             <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300">
-              Consolide onboarding, feedbacks, riscos, inteligência de mercado
-              e IA em uma única plataforma capaz de identificar oportunidades,
-              antecipar problemas e orientar decisões de produto.
+              Transforme sinais operacionais, feedbacks, riscos e tendências
+              de mercado em decisões estratégicas orientadas por evidências.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
@@ -234,7 +157,7 @@ export function LandingPage() {
                   buttonVariants({ size: "lg" }),
                   "bg-white text-zinc-950 hover:bg-zinc-200",
                 )}
-                href="#ecossistema"
+                href="#estrategia"
               >
                 Explorar Ecossistema
                 <ArrowRight className="size-4" />
@@ -246,7 +169,7 @@ export function LandingPage() {
                 )}
                 href="/executive-center"
               >
-                Acessar Demonstração
+                Ver Demonstração
                 <ArrowRight className="size-4" />
               </Link>
             </div>
@@ -254,8 +177,18 @@ export function LandingPage() {
         </div>
       </section>
 
-      <Section id="problema" eyebrow="O Problema" title="As empresas possuem dados. Mas não possuem contexto.">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <Section
+        description="Empresas investem em sistemas, dashboards e indicadores. Mesmo assim, decisões importantes continuam sendo tomadas sem uma visão conectada do negócio."
+        id="problema"
+        title={
+          <>
+            As empresas possuem dados.
+            <br />
+            Mas não possuem contexto.
+          </>
+        }
+      >
+        <div className="grid gap-4 lg:grid-cols-3">
           {problemCards.map((card) => (
             <article
               className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm"
@@ -270,73 +203,60 @@ export function LandingPage() {
             </article>
           ))}
         </div>
-        <div className="mt-6 rounded-lg border border-zinc-200 bg-zinc-950 p-5 text-white shadow-sm">
-          <p className="text-lg font-semibold">
-            Dados isolados explicam o passado.
-          </p>
-          <p className="mt-1 text-lg text-zinc-300">
-            Inteligência conectada orienta o futuro.
-          </p>
-        </div>
+        <ImpactStatement
+          lines={["Coletar dados não gera valor.", "Tomar decisões melhores gera."]}
+        />
       </Section>
 
-      <Section title="Como o Ecossistema funciona">
-        <div className="grid gap-3">
-          {flowSteps.map((step, index) => (
-            <div
-              className="grid gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm md:grid-cols-[180px_1fr]"
-              key={step.title}
-            >
-              <div className="flex items-center gap-3">
-                <span className="flex size-8 items-center justify-center rounded-md bg-zinc-950 text-sm font-semibold text-white">
-                  {index + 1}
-                </span>
-                <h3 className="text-sm font-semibold text-zinc-950">
-                  {step.title}
-                </h3>
+      <Section
+        description="Cada camada gera sinais que enriquecem a próxima etapa até chegar à tomada de decisão."
+        id="estrategia"
+        title="Da operação à estratégia."
+      >
+        <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="hidden items-center gap-2 lg:flex">
+            {flowSteps.map((step, index) => (
+              <div className="flex flex-1 items-center gap-2" key={step}>
+                <div className="flex min-h-24 flex-1 flex-col justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+                  <span className="text-xs font-medium text-zinc-500">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className="text-sm font-semibold leading-5 text-zinc-950">
+                    {step}
+                  </span>
+                </div>
+                {index < flowSteps.length - 1 ? (
+                  <ArrowRight className="size-4 shrink-0 text-zinc-400" />
+                ) : null}
               </div>
-              <p className="text-sm leading-6 text-zinc-600">{step.text}</p>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <div className="space-y-3 lg:hidden">
+            {flowSteps.map((step, index) => (
+              <div className="flex gap-3" key={step}>
+                <div className="flex flex-col items-center">
+                  <span className="flex size-8 items-center justify-center rounded-md bg-zinc-950 text-xs font-semibold text-white">
+                    {index + 1}
+                  </span>
+                  {index < flowSteps.length - 1 ? (
+                    <span className="h-7 w-px bg-zinc-200" />
+                  ) : null}
+                </div>
+                <div className="min-h-10 flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-950">
+                  {step}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </Section>
 
       <Section
-        id="ecossistema"
-        eyebrow="Módulos"
-        title="Módulos do Ecossistema"
+        description="Separados, esses sinais possuem pouco valor. Conectados, eles se tornam inteligência."
+        title="Por que este ecossistema é diferente?"
       >
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {ecosystemModules.map((module) => {
-            const Icon = module.icon;
-
-            return (
-              <article
-                className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm"
-                key={module.title}
-              >
-                <Icon className="size-5 text-zinc-950" />
-                <h3 className="mt-4 text-base font-semibold text-zinc-950">
-                  {module.title}
-                </h3>
-                <p className="mt-3 min-h-16 text-sm leading-6 text-zinc-600">
-                  {module.text}
-                </p>
-                <Link
-                  className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-zinc-950"
-                  href={module.href}
-                >
-                  Acessar módulo
-                  <ArrowRight className="size-4" />
-                </Link>
-              </article>
-            );
-          })}
-        </div>
-      </Section>
-
-      <Section title="Mais do que dashboards">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {differentiators.map((item) => {
             const Icon = item.icon;
 
@@ -356,41 +276,33 @@ export function LandingPage() {
             );
           })}
         </div>
-      </Section>
-
-      <Section title="Arquitetura do Ecossistema">
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-            <ArchitectureTree />
-          </div>
-          <div className="flex items-center rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-            <p className="text-base leading-7 text-zinc-600">
-              Cada módulo produz sinais especializados que alimentam uma camada
-              central de inteligência responsável por consolidar contexto,
-              identificar riscos, gerar insights e recomendar ações.
-            </p>
-          </div>
-        </div>
+        <ImpactStatement
+          lines={[
+            "Dados mostram o que aconteceu.",
+            "Inteligência explica por quê.",
+            "IA sugere o que fazer.",
+          ]}
+        />
       </Section>
 
       <Section
-        id="plataforma"
-        eyebrow="Demonstração"
+        description="Acesse os centros operacionais para ver como os sinais são consolidados em uma experiência de Product Intelligence."
+        id="demonstracao"
         title="Explore a Plataforma"
       >
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {platformCenters.map((center) => (
             <Link
-              className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
+              className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
               href={center.href}
               key={center.title}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-base font-semibold text-zinc-950">
+                  <h3 className="text-sm font-semibold text-zinc-950">
                     {center.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-6 text-zinc-600">
+                  <p className="mt-1 text-sm leading-5 text-zinc-600">
                     {center.text}
                   </p>
                 </div>
@@ -401,32 +313,29 @@ export function LandingPage() {
         </div>
       </Section>
 
-      <Section title="Sobre o Projeto">
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-          <p className="text-base leading-7 text-zinc-600">
-            Projeto desenvolvido por Karla Vieira.
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+          <p className="text-sm leading-6 text-zinc-600">
+            Projeto desenvolvido por Karla Vieira. Senior Product Manager com
+            experiência em plataformas B2B, onboarding, identidade, governança,
+            compliance e produtos orientados a dados.
           </p>
-          <p className="mt-4 text-base leading-7 text-zinc-600">
-            Senior Product Manager com experiência em plataformas B2B,
-            onboarding, identidade, governança, compliance e produtos
-            orientados a dados.
-          </p>
-          <p className="mt-4 text-base leading-7 text-zinc-600">
+          <p className="mt-3 text-sm leading-6 text-zinc-600">
             O Product Intelligence Ecosystem foi criado para demonstrar uma
             visão integrada de Product Intelligence, conectando operações,
             feedbacks, riscos, mercado e inteligência artificial em uma única
             experiência.
           </p>
         </div>
-      </Section>
+      </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-        <div className="rounded-lg border border-zinc-200 bg-zinc-950 p-8 text-white shadow-sm sm:p-10">
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
+        <div className="rounded-lg border border-zinc-200 bg-zinc-950 p-7 text-white shadow-sm sm:p-8">
           <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Pronto para explorar o ecossistema?
+            A próxima decisão não deveria depender de opinião.
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-300">
-            Conheça como sinais operacionais podem ser transformados em
+            Explore como sinais operacionais podem ser transformados em
             inteligência estratégica para apoiar decisões de produto.
           </p>
           <Link
@@ -436,7 +345,7 @@ export function LandingPage() {
             )}
             href="/executive-center"
           >
-            Acessar Centro Executivo
+            Acessar Demonstração
             <ArrowRight className="size-4" />
           </Link>
         </div>
@@ -447,27 +356,41 @@ export function LandingPage() {
 
 function Section({
   children,
-  eyebrow,
+  description,
   id,
   title,
 }: {
   children: React.ReactNode;
-  eyebrow?: string;
+  description?: string;
   id?: string;
-  title: string;
+  title: React.ReactNode;
 }) {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8" id={id}>
-      <div className="mb-6">
-        {eyebrow ? (
-          <p className="text-sm font-medium text-zinc-500">{eyebrow}</p>
-        ) : null}
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8" id={id}>
+      <div className="mb-6 max-w-3xl">
+        <h2 className="text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
           {title}
         </h2>
+        {description ? (
+          <p className="mt-3 text-base leading-7 text-zinc-600">
+            {description}
+          </p>
+        ) : null}
       </div>
       {children}
     </section>
+  );
+}
+
+function ImpactStatement({ lines }: { lines: string[] }) {
+  return (
+    <div className="mt-5 rounded-lg border border-zinc-200 bg-zinc-950 p-5 text-white shadow-sm">
+      {lines.map((line) => (
+        <p className="text-lg font-semibold leading-7 text-zinc-100" key={line}>
+          {line}
+        </p>
+      ))}
+    </div>
   );
 }
 
@@ -493,21 +416,22 @@ function HeroScene() {
             )}
           </div>
           <div className="mt-4 rounded-lg border border-white/10 bg-zinc-950/40">
-            {[
-              "Grupo Orion",
-              "Clínica Alfa",
-              "Educa Prime",
-              "TechFlow",
-            ].map((account, index) => (
-              <div
-                className="grid grid-cols-[1fr_90px_90px] border-b border-white/10 px-4 py-3 text-sm last:border-b-0"
-                key={account}
-              >
-                <span>{account}</span>
-                <span className="text-zinc-300">{[92, 71, 66, 88][index]}</span>
-                <span className="text-zinc-300">{[18, 54, 61, 22][index]}</span>
-              </div>
-            ))}
+            {["Grupo Orion", "Clínica Alfa", "Educa Prime", "TechFlow"].map(
+              (account, index) => (
+                <div
+                  className="grid grid-cols-[1fr_90px_90px] border-b border-white/10 px-4 py-3 text-sm last:border-b-0"
+                  key={account}
+                >
+                  <span>{account}</span>
+                  <span className="text-zinc-300">
+                    {[92, 71, 66, 88][index]}
+                  </span>
+                  <span className="text-zinc-300">
+                    {[18, 54, 61, 22][index]}
+                  </span>
+                </div>
+              ),
+            )}
           </div>
         </div>
       </div>
@@ -517,41 +441,6 @@ function HeroScene() {
           Recomendação: priorizar onboarding inicial e reduzir fricção de
           permissões nas contas em risco.
         </p>
-      </div>
-    </div>
-  );
-}
-
-function ArchitectureTree() {
-  const branches = [
-    "Onboarding",
-    "Feedback Intelligence",
-    "Identity & Onboarding Intelligence",
-    "Market & Growth Intelligence",
-    "AI Copilot",
-  ];
-
-  return (
-    <div>
-      <div className="flex items-center gap-3">
-        <Building2 className="size-5 text-zinc-950" />
-        <p className="font-semibold text-zinc-950">Contas</p>
-      </div>
-      <div className="mt-4 space-y-3 border-l border-zinc-200 pl-5">
-        {branches.map((branch) => (
-          <div className="flex items-center gap-3" key={branch}>
-            <CheckCircle2 className="size-4 text-zinc-500" />
-            <span className="text-sm font-medium text-zinc-700">
-              {branch}
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-5 flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-        <CircleGauge className="size-4 text-zinc-950" />
-        <span className="text-sm font-semibold text-zinc-950">
-          Camada central de inteligência
-        </span>
       </div>
     </div>
   );
