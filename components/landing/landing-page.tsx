@@ -35,18 +35,18 @@ const decisionSteps = [
 const valueCards = [
   {
     icon: GitBranch,
-    text: "Identifique riscos antes que virem problemas.",
-    title: "Menos reação",
+    text: "Identifique riscos antes do impacto.",
+    title: "Antecipe problemas",
   },
   {
     icon: BrainCircuit,
-    text: "Conecte operação, cliente, risco e mercado.",
-    title: "Mais contexto",
+    text: "Una operação, cliente, risco e mercado.",
+    title: "Conecte contexto",
   },
   {
     icon: Target,
-    text: "Priorize ações com base em evidências.",
-    title: "Melhor decisão",
+    text: "Decida com base em evidências.",
+    title: "Priorize melhor",
   },
 ];
 
@@ -100,15 +100,13 @@ export function LandingPage() {
               Product Intelligence Ecosystem
             </h1>
             <p className="mt-5 max-w-2xl text-xl font-medium leading-8 text-zinc-200">
-              Dados mostram o que aconteceu.
+              Os dados já existem.
               <br />
-              Inteligência explica por quê.
-              <br />
-              IA sugere o que fazer.
+              As decisões ainda dependem de opinião.
             </p>
             <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300">
               Transforme sinais operacionais, feedbacks, riscos e tendências
-              de mercado em decisões estratégicas orientadas por evidências.
+              de mercado em inteligência estratégica orientada por contexto.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
@@ -143,10 +141,20 @@ export function LandingPage() {
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-medium text-zinc-500">O problema</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
-            Toda empresa possui sinais.
+            Toda empresa possui dados.
             <br />
-            Poucas conseguem transformá-los em decisões.
+            Poucas conseguem transformá-los em vantagem competitiva.
           </h2>
+          <p className="mt-5 text-base leading-7 text-zinc-600">
+            Todos os dias sua operação gera sinais.
+            <br />
+            Feedbacks. Jornadas. Riscos. Mercado.
+            <br />
+            O problema não é a falta de informação.
+            <br />
+            É a dificuldade de conectar contexto suficiente para tomar decisões
+            melhores.
+          </p>
         </div>
 
         <div className="mx-auto mt-9 max-w-5xl rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
@@ -175,17 +183,15 @@ export function LandingPage() {
           <div>
             <p className="text-sm font-medium text-zinc-500">Contexto</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
-              O problema não é enxergar os sinais.
+              Como sinais se transformam em decisões.
               <span className="mt-2 block text-zinc-500">
-                O problema é conectar o contexto.
+                Sinais isolados geram ruído. Sinais conectados geram
+                inteligência.
               </span>
             </h2>
             <p className="mt-5 text-base leading-7 text-zinc-600">
-              Quando sinais permanecem isolados, as decisões dependem de
-              percepção.
-              <br />
-              Quando sinais são conectados, eles se transformam em
-              inteligência.
+              A KV Partners conecta informações dispersas para gerar contexto,
+              identificar padrões e recomendar ações.
             </p>
           </div>
 
