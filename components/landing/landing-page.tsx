@@ -1,6 +1,7 @@
 import {
   ArrowRight,
   BrainCircuit,
+  Check,
   GitBranch,
   MessageSquareText,
   Sparkles,
@@ -22,7 +23,24 @@ const problemSignals = [
   "Oportunidade de expansão",
 ];
 
-const intelligenceContexts = ["Operação", "Cliente", "Risco", "Mercado"];
+const scatteredSignals = [
+  "Feedback negativo",
+  "Onboarding atrasado",
+  "Baixa adoção",
+  "Benchmark abaixo do mercado",
+  "Churn Risk",
+  "Acessos negados",
+];
+
+const intelligenceOrbit = ["Contexto", "Padrões", "Insights", "IA"];
+
+const orientedDecisions = [
+  "Prioridade identificada",
+  "Risco antecipado",
+  "Oportunidade detectada",
+  "Recomendação gerada",
+  "Próxima ação sugerida",
+];
 
 const decisionSteps = [
   { icon: GitBranch, title: "Sinais" },
@@ -179,48 +197,108 @@ export function LandingPage() {
         className="border-y border-zinc-200 bg-white px-4 py-14 sm:px-6 lg:px-8"
         id="contexto"
       >
-        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.75fr_1.25fr] lg:items-center">
-          <div>
-            <p className="text-sm font-medium text-zinc-500">Contexto</p>
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-sm font-medium text-zinc-500">Transformação</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
               Como sinais se transformam em decisões.
-              <span className="mt-2 block text-zinc-500">
-                Sinais isolados geram ruído. Sinais conectados geram
-                inteligência.
-              </span>
             </h2>
-            <p className="mt-5 text-base leading-7 text-zinc-600">
-              A KV Partners conecta informações dispersas para gerar contexto,
-              identificar padrões e recomendar ações.
+            <p className="mt-4 text-base leading-7 text-zinc-600">
+              Transformamos informações dispersas em contexto acionável.
             </p>
           </div>
 
-          <div className="relative mx-auto grid min-h-[360px] w-full max-w-2xl place-items-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-950 p-6 text-white shadow-sm">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.16),transparent_42%)]" />
-            <div className="absolute h-px w-[72%] bg-white/10" />
-            <div className="absolute h-[72%] w-px bg-white/10" />
-            <div className="relative z-10 grid size-40 place-items-center rounded-full border border-white/15 bg-white text-center text-sm font-semibold uppercase tracking-[0.14em] text-zinc-950 shadow-2xl">
-              INTELLIGENCE
-              <br />
-              ENGINE
-            </div>
-            <div className="absolute inset-5">
-              {intelligenceContexts.map((context, index) => (
-                <div
-                  className={cn(
-                    "absolute rounded-lg border border-white/10 bg-white/[0.08] px-4 py-3 text-sm font-semibold text-zinc-100 shadow-lg backdrop-blur",
-                    index === 0 && "left-1/2 top-0 -translate-x-1/2",
-                    index === 1 && "right-0 top-1/2 -translate-y-1/2",
-                    index === 2 && "bottom-0 left-1/2 -translate-x-1/2",
-                    index === 3 && "left-0 top-1/2 -translate-y-1/2",
-                  )}
-                  key={context}
-                >
-                  {context}
+          <div className="mt-9 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-950 text-white shadow-sm">
+            <div className="grid gap-0 lg:grid-cols-[1fr_0.9fr_1fr]">
+              <div className="border-b border-white/10 bg-white/[0.03] p-5 lg:border-b-0 lg:border-r">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                  Antes
+                </p>
+                <h3 className="mt-3 text-xl font-semibold text-zinc-100">
+                  Sinais dispersos
+                </h3>
+                <div className="relative mt-6 min-h-[220px] rounded-lg border border-white/10 bg-white/[0.04] p-4">
+                  {scatteredSignals.map((signal, index) => (
+                    <span
+                      className={cn(
+                        "absolute max-w-[160px] rounded-md border border-white/10 bg-zinc-800/80 px-3 py-2 text-xs font-medium text-zinc-300 shadow-sm",
+                        index === 0 && "left-4 top-5 rotate-[-3deg]",
+                        index === 1 && "right-5 top-10 rotate-2",
+                        index === 2 && "left-8 top-24 rotate-1",
+                        index === 3 && "right-3 top-28 rotate-[-2deg]",
+                        index === 4 && "bottom-6 left-5 rotate-2",
+                        index === 5 && "bottom-10 right-8 rotate-[-3deg]",
+                      )}
+                      key={signal}
+                    >
+                      {signal}
+                    </span>
+                  ))}
                 </div>
-              ))}
+                <p className="mt-5 text-base font-medium leading-7 text-zinc-300">
+                  Informação existe.
+                  <br />
+                  Contexto não.
+                </p>
+              </div>
+
+              <div className="relative grid min-h-[360px] place-items-center overflow-hidden border-b border-white/10 p-5 lg:border-b-0 lg:border-r">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.18),transparent_48%)]" />
+                <div className="absolute left-8 right-8 top-1/2 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                <div className="absolute bottom-8 top-8 left-1/2 w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+                <div className="relative grid size-44 place-items-center rounded-full border border-white/15 bg-white text-center text-sm font-semibold uppercase tracking-[0.16em] text-zinc-950 shadow-2xl">
+                  INTELLIGENCE
+                </div>
+                {intelligenceOrbit.map((item, index) => (
+                  <div
+                    className={cn(
+                      "absolute rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5 text-xs font-semibold text-zinc-200 shadow-lg backdrop-blur-sm",
+                      index === 0 && "left-1/2 top-8 -translate-x-1/2",
+                      index === 1 && "right-8 top-1/2 -translate-y-1/2",
+                      index === 2 && "bottom-8 left-1/2 -translate-x-1/2",
+                      index === 3 && "left-8 top-1/2 -translate-y-1/2",
+                    )}
+                    key={item}
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-white p-5 text-zinc-950">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
+                  Depois
+                </p>
+                <h3 className="mt-3 text-xl font-semibold text-zinc-950">
+                  Decisão orientada
+                </h3>
+                <div className="mt-6 grid gap-3">
+                  {orientedDecisions.map((decision) => (
+                    <div
+                      className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-700"
+                      key={decision}
+                    >
+                      <Check className="size-4 text-emerald-600" />
+                      <span>{decision}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-5 text-base font-medium leading-7 text-zinc-700">
+                  Menos opinião.
+                  <br />
+                  Mais evidência.
+                </p>
+              </div>
             </div>
           </div>
+
+          <p className="mx-auto mt-8 max-w-3xl text-center text-xl font-semibold leading-8 text-zinc-950">
+            Dados mostram o que aconteceu.
+            <br />
+            Contexto explica por quê.
+            <br />
+            Inteligência sugere o que fazer.
+          </p>
         </div>
       </section>
 
