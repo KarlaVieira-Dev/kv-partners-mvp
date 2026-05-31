@@ -4,6 +4,15 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const heroSignals = [
+  "feedbacks",
+  "comportamentos",
+  "operação",
+  "mercado",
+  "suporte",
+  "vendas",
+];
+
 const resultCards = [
   {
     title: "Menos Risco",
@@ -87,67 +96,67 @@ export function LandingPage() {
       </section>
 
       <section
-        className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+        className="mx-auto max-w-7xl px-4 py-14 text-center sm:px-6 lg:px-8"
         id="problema"
       >
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-4xl font-semibold tracking-tight text-zinc-950 sm:text-6xl">
-            Toda empresa possui dados.
-            <br />
-            <span className="text-zinc-500">
-              Poucas conseguem transformá-los em vantagem competitiva.
-            </span>
+        <h2 className="mx-auto max-w-4xl text-4xl font-semibold tracking-tight text-zinc-950 sm:text-6xl">
+          Toda empresa possui dados.
+          <br />
+          <span className="text-zinc-500">
+            Poucas conseguem transformá-los em vantagem competitiva.
+          </span>
+        </h2>
+        <p className="mx-auto mt-7 max-w-2xl text-xl font-medium leading-8 text-zinc-600">
+          Os dados já existem.
+          <br />
+          As decisões ainda dependem de opinião.
+        </p>
+      </section>
+
+      <section
+        className="border-y border-zinc-200 bg-white px-4 py-14 text-center sm:px-6 lg:px-8"
+        id="transformacao"
+      >
+        <div className="mx-auto max-w-7xl">
+          <h2 className="mx-auto max-w-4xl text-4xl font-semibold tracking-tight text-zinc-950 sm:text-6xl">
+            Transformamos sinais em contexto.
           </h2>
-          <p className="mt-7 text-xl font-medium leading-8 text-zinc-600">
-            Os dados já existem.
+          <p className="mx-auto mt-6 max-w-3xl text-xl font-medium leading-8 text-zinc-500">
+            A diferença não está na quantidade de informação. Está na capacidade
+            de conectar padrões, riscos, comportamentos e oportunidades antes
+            que gerem impacto.
+          </p>
+
+          <div className="mx-auto mt-10 max-w-5xl rounded-lg bg-zinc-950 px-5 py-8 text-white sm:px-8">
+            <div className="grid gap-6 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:items-center">
+              <Stage title="Sinais dispersos" />
+              <Arrow />
+              <Stage title="Inteligência e contexto" highlight />
+              <Arrow />
+              <Stage title="Decisões melhores" />
+            </div>
+          </div>
+
+          <p className="mx-auto mt-8 max-w-3xl text-2xl font-semibold leading-9 text-zinc-950">
+            As melhores decisões raramente surgem de mais dados.
             <br />
-            As decisões ainda dependem de opinião.
+            <span className="text-zinc-500">Elas surgem de mais contexto.</span>
           </p>
         </div>
       </section>
 
       <section
-        className="border-y border-zinc-200 bg-white px-4 py-14 sm:px-6 lg:px-8"
-        id="transformacao"
-      >
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-4xl">
-            <h2 className="text-4xl font-semibold tracking-tight text-zinc-950 sm:text-6xl">
-              Transformamos sinais em contexto.
-            </h2>
-            <p className="mt-6 max-w-3xl text-xl font-medium leading-8 text-zinc-500">
-              A diferença não está na quantidade de informação. Está na
-              capacidade de conectar padrões, riscos, comportamentos e
-              oportunidades antes que gerem impacto.
-            </p>
-          </div>
-
-          <div className="mt-10 rounded-lg bg-zinc-950 px-5 py-8 text-white sm:px-8">
-            <div className="grid gap-6 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:items-center">
-              <Stage label="Antes" title="Sinais" tone="muted" />
-              <Arrow />
-              <Stage label="Virada" title="Inteligência" tone="strong" />
-              <Arrow />
-              <Stage label="Depois" title="Decisão" tone="light" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section
-        className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+        className="mx-auto max-w-7xl px-4 py-14 text-center sm:px-6 lg:px-8"
         id="resultado"
       >
-        <div className="mb-8 max-w-4xl">
-          <h2 className="text-4xl font-semibold tracking-tight text-zinc-950 sm:text-6xl">
-            Quando as decisões melhoram, os resultados mudam.
-          </h2>
-        </div>
+        <h2 className="mx-auto max-w-4xl text-4xl font-semibold tracking-tight text-zinc-950 sm:text-6xl">
+          Quando as decisões melhoram, os resultados mudam.
+        </h2>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-9 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {resultCards.map((card) => (
             <article
-              className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm"
+              className="rounded-lg border border-zinc-200 bg-white p-5 text-left shadow-sm"
               key={card.title}
             >
               <h3 className="text-base font-semibold text-zinc-950">
@@ -161,54 +170,44 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
-        <div className="border-t border-zinc-200 pt-12">
-          <h2 className="max-w-4xl text-4xl font-semibold tracking-tight text-zinc-950 sm:text-6xl">
-            Os sinais já existem.
-            <br />
-            <span className="text-zinc-500">
-              A diferença está em quem consegue transformá-los em decisão.
-            </span>
-          </h2>
-          <Link
-            className={cn(buttonVariants({ size: "lg" }), "mt-9")}
-            href="/executive-center"
-          >
-            Ver Demonstração
-            <ArrowRight className="size-4" />
-          </Link>
-        </div>
+      <section className="bg-zinc-950 px-4 py-16 text-center text-white sm:px-6 lg:px-8">
+        <h2 className="mx-auto max-w-4xl text-4xl font-semibold tracking-tight sm:text-6xl">
+          Os sinais já existem.
+          <br />
+          <span className="text-zinc-400">
+            A diferença está em quem consegue transformá-los em decisão.
+          </span>
+        </h2>
+        <Link
+          className={cn(
+            buttonVariants({ size: "lg" }),
+            "mt-9 bg-white text-zinc-950 hover:bg-zinc-200",
+          )}
+          href="/executive-center"
+        >
+          Ver Demonstração
+          <ArrowRight className="size-4" />
+        </Link>
       </section>
     </main>
   );
 }
 
 function Stage({
-  label,
+  highlight = false,
   title,
-  tone,
 }: {
-  label: string;
+  highlight?: boolean;
   title: string;
-  tone: "light" | "muted" | "strong";
 }) {
-  const toneClasses = {
-    light: "bg-white text-zinc-950",
-    muted: "bg-white/[0.06] text-zinc-100",
-    strong: "bg-white text-zinc-950 shadow-2xl",
-  };
-
   return (
     <div
       className={cn(
         "rounded-lg border border-white/10 px-5 py-6 text-center",
-        toneClasses[tone],
+        highlight ? "bg-white text-zinc-950 shadow-2xl" : "bg-white/[0.06]",
       )}
     >
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-50">
-        {label}
-      </p>
-      <p className="mt-3 text-2xl font-semibold tracking-tight">{title}</p>
+      <p className="text-2xl font-semibold tracking-tight">{title}</p>
     </div>
   );
 }
@@ -227,10 +226,35 @@ function HeroScene() {
     <div aria-hidden className="absolute inset-0">
       <div className="absolute inset-0 bg-zinc-950" />
       <div className="absolute right-[-18%] top-[-22%] h-[620px] w-[620px] rounded-full border border-white/10 bg-white/[0.035]" />
-      <div className="absolute right-[12%] top-28 hidden h-72 w-72 rounded-full border border-white/10 bg-white text-zinc-950 shadow-2xl lg:grid lg:place-items-center">
-        <span className="text-sm font-semibold uppercase tracking-[0.18em]">
+      <div className="absolute right-[3%] top-24 hidden h-[360px] w-[620px] lg:block">
+        <div className="absolute inset-y-0 left-[42%] w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+        <div className="absolute left-[41%] top-1/2 h-px w-[38%] bg-gradient-to-r from-white/25 via-white/20 to-transparent" />
+        <div className="absolute right-0 top-1/2 h-px w-[18%] bg-gradient-to-r from-white/25 to-transparent" />
+
+        {heroSignals.map((signal, index) => (
+          <div
+            className={cn(
+              "absolute flex items-center gap-3 text-sm font-medium text-zinc-500",
+              index === 0 && "left-0 top-4",
+              index === 1 && "left-7 top-20",
+              index === 2 && "left-2 top-36",
+              index === 3 && "left-12 top-52",
+              index === 4 && "left-0 top-68",
+              index === 5 && "left-20 top-80",
+            )}
+            key={signal}
+          >
+            <span>{signal}</span>
+            <span className="h-px w-24 bg-gradient-to-r from-white/20 to-transparent" />
+          </div>
+        ))}
+
+        <div className="absolute left-[32%] top-[38%] grid size-32 place-items-center rounded-full border border-white/10 bg-white text-center text-xs font-semibold uppercase tracking-[0.16em] text-zinc-950 shadow-2xl">
+          Contexto
+        </div>
+        <div className="absolute right-0 top-[40%] grid size-28 place-items-center rounded-full border border-white/10 bg-white/[0.08] text-center text-xs font-semibold uppercase tracking-[0.16em] text-white backdrop-blur">
           Decisão
-        </span>
+        </div>
       </div>
       <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-zinc-950 to-transparent" />
     </div>
