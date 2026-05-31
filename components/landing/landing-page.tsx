@@ -18,8 +18,6 @@ const scatteredSignals = [
   "Acessos negados",
 ];
 
-const intelligenceOrbit = ["Contexto", "Padrões", "Insights", "IA"];
-
 const orientedDecisions = [
   "Prioridade identificada",
   "Risco antecipado",
@@ -29,10 +27,10 @@ const orientedDecisions = [
 ];
 
 const resultHighlights = [
-  "Riscos identificados antes do impacto",
-  "Oportunidades identificadas antes da concorrência",
-  "Decisões apoiadas por contexto",
-  "Menos opinião. Mais evidência.",
+  "riscos identificados antes do impacto",
+  "oportunidades identificadas antes da concorrência",
+  "decisões apoiadas por contexto",
+  "menos opinião, mais evidência",
 ];
 
 export function LandingPage() {
@@ -55,13 +53,13 @@ export function LandingPage() {
           </Link>
           <nav className="hidden items-center gap-5 text-sm font-medium text-zinc-600 md:flex">
             <a className="hover:text-zinc-950" href="#problema">
-              Problema
+              Sinais
             </a>
             <a className="hover:text-zinc-950" href="#decisao">
-              Decisão
+              Virada
             </a>
             <a className="hover:text-zinc-950" href="#valor">
-              Valor
+              Clareza
             </a>
             <Link
               className={buttonVariants({ size: "sm", variant: "outline" })}
@@ -124,16 +122,21 @@ export function LandingPage() {
         id="problema"
       >
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-sm font-medium text-zinc-500">O problema</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
-            Toda empresa possui dados.
+          <h2 className="text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
+            Sua empresa já possui os sinais.
             <br />
-            Poucas conseguem transformá-los em vantagem competitiva.
+            <span className="text-zinc-500">
+              O problema é perceber tarde demais o que eles estavam tentando
+              dizer.
+            </span>
           </h2>
           <p className="mt-5 text-base leading-7 text-zinc-600">
-            Os dados já existem.
+            Feedbacks. Comportamentos. Riscos. Mudanças de mercado.
             <br />
-            As decisões ainda dependem de opinião.
+            <br />
+            Todos os dias sua operação produz sinais.
+            <br />
+            Poucas empresas conseguem transformá-los em vantagem competitiva.
           </p>
         </div>
       </section>
@@ -144,12 +147,12 @@ export function LandingPage() {
       >
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-medium text-zinc-500">Transformação</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
-              Como sinais se transformam em decisões.
+            <h2 className="text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
+              Pare de descobrir problemas quando já é tarde.
             </h2>
             <p className="mt-4 text-base leading-7 text-zinc-600">
-              Transformamos informações dispersas em contexto acionável.
+              Transformamos sinais dispersos em contexto para apoiar decisões
+              melhores.
             </p>
           </div>
 
@@ -192,22 +195,11 @@ export function LandingPage() {
                 <div className="absolute left-8 right-8 top-1/2 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                 <div className="absolute bottom-8 top-8 left-1/2 w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
                 <div className="relative grid size-44 place-items-center rounded-full border border-white/15 bg-white text-center text-sm font-semibold uppercase tracking-[0.16em] text-zinc-950 shadow-2xl">
-                  INTELLIGENCE
+                  INTELIGÊNCIA
                 </div>
-                {intelligenceOrbit.map((item, index) => (
-                  <div
-                    className={cn(
-                      "absolute rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5 text-xs font-semibold text-zinc-200 shadow-lg backdrop-blur-sm",
-                      index === 0 && "left-1/2 top-8 -translate-x-1/2",
-                      index === 1 && "right-8 top-1/2 -translate-y-1/2",
-                      index === 2 && "bottom-8 left-1/2 -translate-x-1/2",
-                      index === 3 && "left-8 top-1/2 -translate-y-1/2",
-                    )}
-                    key={item}
-                  >
-                    {item}
-                  </div>
-                ))}
+                <div className="absolute bottom-8 left-1/2 w-[82%] -translate-x-1/2 text-center text-xs font-medium text-zinc-400">
+                  sinais dispersos → contexto → padrões → inteligência → decisão
+                </div>
               </div>
 
               <div className="bg-white p-5 text-zinc-950">
@@ -253,35 +245,28 @@ export function LandingPage() {
       >
         <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div>
-            <p className="text-sm font-medium text-zinc-500">Resultado</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
-              Menos reação.
-              <br />
-              Mais antecipação.
-          </h2>
+            <h2 className="text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
+              Antecipe riscos antes que eles virem resultados.
+            </h2>
             <p className="mt-5 text-base leading-7 text-zinc-600">
-              Empresas competitivas não tomam decisões apenas olhando para o
-              passado.
+              Os sinais aparecem antes dos problemas.
+              <br />
+              A diferença está em quem consegue enxergá-los.
               <br />
               <br />
-              Elas identificam riscos antes do impacto. Detectam oportunidades
-              antes da concorrência. E transformam sinais dispersos em vantagem
-              competitiva.
             </p>
           </div>
 
-          <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-            <div className="grid gap-3">
-              {resultHighlights.map((highlight) => (
-                <div
-                  className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-700"
-                  key={highlight}
-                >
-                  <Check className="size-4 text-emerald-600" />
-                  <span>{highlight}</span>
-                </div>
-              ))}
-            </div>
+          <div className="grid gap-4">
+            {resultHighlights.map((highlight) => (
+              <div
+                className="flex items-center gap-3 text-base font-medium text-zinc-700"
+                key={highlight}
+              >
+                <Check className="size-5 shrink-0 text-emerald-600" />
+                <span>{highlight}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -289,7 +274,10 @@ export function LandingPage() {
       <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-8 text-white shadow-sm sm:p-10">
           <h2 className="max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
-            A próxima decisão não deveria depender de opinião.
+            Os sinais já estão aí.
+            <span className="mt-2 block text-zinc-400">
+              Você está vendo os certos?
+            </span>
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">
             Veja como sinais operacionais podem ser transformados em
