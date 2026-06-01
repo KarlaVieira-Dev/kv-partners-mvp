@@ -4,7 +4,6 @@ import { Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import type {
-  ExecutiveAccountRow,
   ExecutiveAccountsResponse,
   FeedbackRow,
   FeedbacksResponse,
@@ -15,7 +14,6 @@ import type {
   RisksResponse,
 } from "@/lib/google-sheets/types";
 import { cn } from "@/lib/utils";
-import { IntelligentSummary } from "./shared";
 
 const average = (values: number[]) => {
   if (values.length === 0) {
@@ -51,7 +49,11 @@ const isPriority = (value: string) => {
 };
 
 const statusLabel = (status: TrafficStatus) =>
-  status === "Vermelho" ? "Crítico" : status === "Amarelo" ? "Atenção" : "Oportunidade";
+  status === "Vermelho"
+    ? "Crítico"
+    : status === "Amarelo"
+      ? "Atenção"
+      : "Saudável";
 
 const opportunityScore = (healthScore: number, riskScore: number) =>
   Math.round(healthScore - riskScore * 0.5);
@@ -71,38 +73,33 @@ const emptyGrowth: GrowthResponse = {
   source: "not-configured",
 };
 
-type TrendSignal = {
-  description: string;
-  direction: "↑" | "↓" | "→";
-  impact: "Baixo" | "Médio" | "Alto";
-  justification: string;
-};
-
 type TrafficStatus = "Verde" | "Amarelo" | "Vermelho";
 
-type ExecutivePulseItem = {
+type AttentionSignal = {
+  impact: "Baixo" | "Médio" | "Alto";
+  message: string;
+};
+
+type ExecutiveHealthItem = {
   area: string;
-  metric: string;
   reason: string;
   status: TrafficStatus;
-  trend: "↑" | "↓" | "→";
 };
 
 type ExecutivePlanAction = {
   impact: string;
+  owner: string;
+  priority: string;
   reason: string;
   source?: string;
   status: TrafficStatus;
   suggestedAction?: string;
-  suggestedDeadline: string;
   title: string;
 };
 
-type ImpactSemaphore = {
-  area: string;
-  explanation: string;
-  expectedImpact: "Alto" | "Médio" | "Baixo";
-  status: TrafficStatus;
+type ExpectedOutcome = {
+  description: string;
+  tone: TrafficStatus;
 };
 
 type InitiativeRanking = {
@@ -115,14 +112,15 @@ type InitiativeRanking = {
   score: number;
 };
 
-const buildTrendSignals = (
+const buildAttentionSignals = (
   risks: RiskRow[],
   onboardings: OnboardingsResponse["onboardings"],
   feedbacks: FeedbackRow[],
-): TrendSignal[] => {
+): AttentionSignal[] => {
   const onboardingRiskCount =
     risks.filter((risk) => risk.onboardingScore < 70).length +
-    onboardings.filter((onboarding) => normalize(onboarding.risk).includes("alto")).length;
+    onboardings.filter((onboarding) => normalize(onboarding.risk).includes("alto"))
+      .length;
   const negativePermissionFeedbacks = feedbacks.filter((feedback) => {
     const text = normalize(
       `${feedback.sentiment} ${feedback.priority} ${feedback.category} ${feedback.theme} ${feedback.summary}`,
@@ -137,37 +135,44 @@ const buildTrendSignals = (
 
   return [
     {
-      description: "Risco concentrado em onboarding",
-      direction: onboardingRiskCount > 0 ? "↑" : "→",
-      impact: onboardingRiskCount >= 2 ? "Alto" : onboardingRiskCount === 1 ? "Médio" : "Baixo",
-      justification:
+      impact:
+        onboardingRiskCount >= 2
+          ? "Alto"
+          : onboardingRiskCount === 1
+            ? "Médio"
+            : "Baixo",
+      message:
         onboardingRiskCount > 0
-          ? `${onboardingRiskCount} sinal(is) conectam risco atual a onboarding.`
-          : "Não há concentração relevante em onboarding no recorte atual.",
+          ? "Onboarding concentra o maior volume de risco atual e pode pressionar adoção, retenção e geração de valor."
+          : "Onboarding não aparece como vetor dominante de risco no recorte atual.",
     },
     {
-      description: "Feedback negativo em permissões",
-      direction: negativePermissionFeedbacks > 0 ? "↑" : "→",
-      impact: negativePermissionFeedbacks >= 2 ? "Alto" : negativePermissionFeedbacks === 1 ? "Médio" : "Baixo",
-      justification:
+      impact:
+        negativePermissionFeedbacks >= 2
+          ? "Alto"
+          : negativePermissionFeedbacks === 1
+            ? "Médio"
+            : "Baixo",
+      message:
         negativePermissionFeedbacks > 0
-          ? `${negativePermissionFeedbacks} feedback(s) conectam sentimento negativo a permissões ou acessos.`
-          : "Sem recorrência negativa relevante em permissões nas fontes atuais.",
+          ? "Permissões e acessos concentram feedbacks negativos recorrentes e indicam fricção operacional."
+          : "Permissões e acessos não concentram feedback negativo relevante no momento.",
     },
     {
-      description: "Índice de Saúde estável",
-      direction: "→",
       impact: averageHealth >= 70 ? "Baixo" : averageHealth >= 50 ? "Médio" : "Alto",
-      justification: `Média atual do Índice de Saúde em ${averageHealth}, sem histórico temporal suficiente para afirmar evolução real.`,
+      message:
+        averageHealth >= 70
+          ? "A saúde média permanece satisfatória, mas contas com onboarding incompleto exigem monitoramento próximo."
+          : "A saúde média exige atenção executiva porque pode limitar expansão e retenção.",
     },
   ];
 };
 
-const buildExecutivePulse = (
+const buildEcosystemHealth = (
   risks: RiskRow[],
   onboardings: OnboardingsResponse["onboardings"],
   feedbacks: FeedbackRow[],
-): ExecutivePulseItem[] => {
+): ExecutiveHealthItem[] => {
   const highRiskAccounts = risks.filter(isHighOrCriticalRisk);
   const criticalAccounts = risks.filter((risk) =>
     normalize(risk.riskLevel).includes("critico"),
@@ -196,115 +201,90 @@ const buildExecutivePulse = (
 
   return [
     {
-      area: "Crescimento",
-      metric: `${averageExpansion} de Potencial de Expansão médio`,
-      reason:
-        averageExpansion >= 60
-          ? "contas saudáveis com risco controlado"
-          : "oportunidades ainda dependem de redução de risco",
-      status: averageExpansion >= 60 ? "Verde" : averageExpansion >= 40 ? "Amarelo" : "Vermelho",
-      trend: averageExpansion >= 60 ? "↑" : "→",
-    },
-    {
-      area: "Saúde",
-      metric: `${averageHealth} de Índice de Saúde médio`,
+      area: "Saúde das contas",
       reason:
         averageHealth >= 70
-          ? "base monitorada mantém saúde positiva"
-          : "saúde média exige acompanhamento executivo",
+          ? `A maioria das contas apresenta saúde satisfatória, com Índice de Saúde médio em ${averageHealth}.`
+          : `A saúde média está em ${averageHealth} e exige acompanhamento executivo.`,
       status: averageHealth >= 70 ? "Verde" : averageHealth >= 50 ? "Amarelo" : "Vermelho",
-      trend: "→",
+    },
+    {
+      area: "Crescimento",
+      reason:
+        averageExpansion >= 60
+          ? "Existem oportunidades de expansão identificadas em contas saudáveis e com risco controlado."
+          : "O potencial de expansão depende de redução de risco em contas relevantes.",
+      status: averageExpansion >= 60 ? "Verde" : averageExpansion >= 40 ? "Amarelo" : "Vermelho",
     },
     {
       area: "Onboarding",
-      metric: `${onboardingAttention.length} conta(s) exigem atenção`,
       reason:
         onboardingAttention.length > 0
-          ? "há jornadas com risco, atraso ou baixa evolução"
-          : "jornadas sem alerta crítico no recorte atual",
-      status: onboardingAttention.length >= 3 ? "Vermelho" : onboardingAttention.length > 0 ? "Amarelo" : "Verde",
-      trend: onboardingAttention.length > 0 ? "↑" : "→",
+          ? "Existem contas com onboarding incompleto, atraso ou baixa evolução."
+          : "As jornadas de onboarding não apresentam alerta crítico no recorte atual.",
+      status:
+        onboardingAttention.length >= 3
+          ? "Vermelho"
+          : onboardingAttention.length > 0
+            ? "Amarelo"
+            : "Verde",
     },
     {
       area: "Feedback",
-      metric: `${negativeFeedbacks.length} sinal(is) negativos ou críticos`,
       reason:
         negativeFeedbacks.length > 0
-          ? "feedbacks indicam fricção recorrente"
-          : "sem concentração negativa relevante",
-      status: negativeFeedbacks.length >= 3 ? "Vermelho" : negativeFeedbacks.length > 0 ? "Amarelo" : "Verde",
-      trend: negativeFeedbacks.length > 0 ? "↑" : "→",
+          ? "Feedbacks negativos concentram sinais de fricção que podem afetar adoção."
+          : "Não há concentração negativa relevante nos feedbacks atuais.",
+      status:
+        negativeFeedbacks.length >= 3
+          ? "Vermelho"
+          : negativeFeedbacks.length > 0
+            ? "Amarelo"
+            : "Verde",
     },
     {
       area: "Risco",
-      metric: `${highRiskAccounts.length} conta(s) em alto risco ou crítico`,
       reason:
         criticalAccounts.length > 0
-          ? "há conta crítica exigindo ação imediata"
-          : "risco concentrado abaixo do nível crítico",
-      status: criticalAccounts.length > 0 ? "Vermelho" : highRiskAccounts.length > 0 ? "Amarelo" : "Verde",
-      trend: highRiskAccounts.length > 0 ? "↑" : "→",
+          ? "Existem contas classificadas como Crítico e que exigem ação imediata."
+          : highRiskAccounts.length > 0
+            ? "Existem contas classificadas como Alto e que exigem monitoramento próximo."
+            : "Não há contas em Alto ou Crítico no recorte atual.",
+      status:
+        criticalAccounts.length > 0
+          ? "Vermelho"
+          : highRiskAccounts.length > 0
+            ? "Amarelo"
+            : "Verde",
     },
   ];
 };
 
-const buildImpactSemaphores = (
-  risks: RiskRow[],
-  onboardings: OnboardingsResponse["onboardings"],
-  feedbacks: FeedbackRow[],
-): ImpactSemaphore[] => {
-  const highRiskCount = risks.filter(isHighOrCriticalRisk).length;
-  const onboardingAttention = onboardings.filter(
-    (onboarding) =>
-      normalize(onboarding.risk).includes("alto") ||
-      onboarding.daysInProgress >= 14 ||
-      onboarding.progress < 50,
-  ).length;
-  const averageExpansion = average(
-    risks.map((risk) => opportunityScore(risk.healthScore, risk.riskScore)),
-  );
-  const permissionFeedbacks = feedbacks.filter((feedback) =>
-    normalize(`${feedback.theme} ${feedback.summary} ${feedback.category}`).includes(
-      "permiss",
-    ),
-  ).length;
-
-  return [
-    {
-      area: "Retenção",
-      explanation:
-        highRiskCount > 0
-          ? "redução de risco nas contas críticas e em alto risco"
-          : "manutenção da base saudável monitorada",
-      expectedImpact: highRiskCount > 0 ? "Alto" : "Médio",
-      status: highRiskCount > 0 ? "Verde" : "Amarelo",
-    },
-    {
-      area: "Adoção",
-      explanation:
-        onboardingAttention > 0
-          ? "simplificação de jornadas de onboarding com atenção"
-          : "continuidade da evolução inicial das contas",
-      expectedImpact: onboardingAttention > 0 ? "Alto" : "Médio",
-      status: onboardingAttention > 0 ? "Verde" : "Amarelo",
-    },
-    {
-      area: "Receita / Expansão",
-      explanation: "contas saudáveis prontas para abordagem comercial",
-      expectedImpact: averageExpansion >= 60 ? "Alto" : "Médio",
-      status: averageExpansion >= 60 ? "Verde" : "Amarelo",
-    },
-    {
-      area: "Eficiência Operacional",
-      explanation:
-        permissionFeedbacks > 0
-          ? "redução de retrabalho em permissões e acessos"
-          : "ganho operacional com ações recomendadas",
-      expectedImpact: permissionFeedbacks > 0 ? "Médio" : "Baixo",
-      status: permissionFeedbacks > 0 ? "Amarelo" : "Verde",
-    },
-  ];
-};
+const buildExpectedOutcomes = (
+  priorityAccount: RiskRow | undefined,
+  topOpportunity: RiskRow | undefined,
+): ExpectedOutcome[] => [
+  {
+    description: priorityAccount
+      ? `Redução do risco operacional em ${priorityAccount.accountName}.`
+      : "Redução do risco operacional nas contas prioritárias.",
+    tone: "Verde",
+  },
+  {
+    description: "Melhoria da retenção ao atuar antes que a fricção vire perda de valor.",
+    tone: "Verde",
+  },
+  {
+    description: "Aumento da adoção ao simplificar jornadas críticas de onboarding.",
+    tone: "Verde",
+  },
+  {
+    description: topOpportunity
+      ? `Potencial de expansão futura em ${topOpportunity.accountName}.`
+      : "Potencial de expansão futura em contas saudáveis.",
+    tone: "Amarelo",
+  },
+];
 
 const buildExecutivePlan = (
   priorityAccount: RiskRow | undefined,
@@ -317,36 +297,39 @@ const buildExecutivePlan = (
   return [
     {
       impact: "Retenção e adoção",
+      owner: "Operação e Sucesso do Cliente",
+      priority: isCritical ? "Imediata" : "Alta",
       reason: priorityAccount
-        ? `${priorityAccount.mainReason}. Maior risco consolidado do ecossistema.`
+        ? `${priorityAccount.mainReason}.`
         : "Sem conta crítica consolidada nas fontes atuais.",
       source: "07_IOI_Scores",
       status: isCritical ? "Vermelho" : "Amarelo",
       suggestedAction: priorityAccount?.suggestedAction,
-      suggestedDeadline: isCritical ? "7 dias" : "14 dias",
       title: priorityAccount
         ? `Mitigar ${priorityAccount.accountName}`
         : "Mitigar conta mais crítica",
     },
     {
       impact: "Redução de atrito operacional",
+      owner: topInitiative?.area || "Produto e Operações",
+      priority: "Alta",
       reason: topInitiative
-        ? `Principal iniciativa estratégica com pontuação ${topInitiative.score}.`
+        ? topInitiative.justification
         : "Iniciativa estratégica ainda não consolidada.",
       status: "Amarelo",
-      suggestedDeadline: "30 dias",
       title: topInitiative?.initiative || "Priorizar iniciativa estratégica",
     },
     {
       impact: "Crescimento",
+      owner: "Comercial e Estratégia",
+      priority: "Oportunidade",
       reason: topOpportunity
-        ? `Maior Potencial de Expansão: ${opportunityScore(
+        ? `Alta saúde relativa e risco controlado geram Potencial de Expansão ${opportunityScore(
             topOpportunity.healthScore,
             topOpportunity.riskScore,
           )}.`
         : "Sem oportunidade consolidada nas fontes atuais.",
       status: "Verde",
-      suggestedDeadline: "30 dias",
       title: topOpportunity
         ? `Expandir ${topOpportunity.accountName}`
         : "Avaliar oportunidade de expansão",
@@ -363,7 +346,8 @@ const buildInitiativeRanking = (
   const highRiskCount = risks.filter(isHighOrCriticalRisk).length;
   const onboardingSignals =
     risks.filter((risk) => risk.onboardingScore < 70).length +
-    onboardings.filter((onboarding) => normalize(onboarding.risk).includes("alto")).length;
+    onboardings.filter((onboarding) => normalize(onboarding.risk).includes("alto"))
+      .length;
   const feedbackSignals = feedbacks.filter((feedback) => {
     const text = normalize(
       `${feedback.sentiment} ${feedback.priority} ${feedback.theme} ${feedback.summary}`,
@@ -399,10 +383,10 @@ const buildInitiativeRanking = (
         initiative: recommendation.recommendation,
         justification:
           onboardingBonus > 0
-            ? "Conecta risco, onboarding e sinais operacionais."
+            ? "Principal fator de risco atual está conectado a onboarding."
             : feedbackBonus > 0
-              ? "Reduz fricção operacional ligada a feedbacks e acessos."
-              : "Conecta recomendações estratégicas, risco e potencial de expansão.",
+              ? "Sinais de feedback indicam fricção em permissões ou acessos."
+              : "Recomendação conecta risco, expansão e prioridade estratégica.",
         priority: recommendation.priority,
         score,
       };
@@ -416,7 +400,6 @@ const buildInitiativeRanking = (
 };
 
 export function ExecutiveCenter() {
-  const [accounts, setAccounts] = useState<ExecutiveAccountRow[]>([]);
   const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([]);
   const [risks, setRisks] = useState<RiskRow[]>([]);
   const [onboardings, setOnboardings] = useState<OnboardingsResponse["onboardings"]>([]);
@@ -450,7 +433,6 @@ export function ExecutiveCenter() {
           (await onboardingsResponse.json()) as OnboardingsResponse;
         const growthData = (await growthResponse.json()) as GrowthResponse;
 
-        setAccounts(accountsData.accounts);
         setFeedbacks(feedbacksData.feedbacks);
         setRisks(risksData.risks);
         setOnboardings(onboardingsData.onboardings);
@@ -464,78 +446,30 @@ export function ExecutiveCenter() {
     loadExecutiveData();
   }, []);
 
-  const highRiskAccounts = useMemo(
-    () => risks.filter(isHighOrCriticalRisk),
-    [risks],
-  );
-
   const priorityAccount = useMemo(
     () => [...risks].sort((first, second) => second.riskScore - first.riskScore)[0],
     [risks],
   );
 
-  const riskAverage = useMemo(
-    () => average(risks.map((risk) => risk.riskScore)),
-    [risks],
-  );
-
-  const healthAverage = useMemo(
-    () => average(risks.map((risk) => risk.healthScore)),
-    [risks],
-  );
-
-  const metrics = useMemo(
-    () => [
-      {
-        detail: "Derivado de 07_IOI_Scores",
-        label: "Risco médio",
-        value: riskAverage,
-      },
-      {
-        detail: "Alto ou Crítico",
-        label: "Contas em risco",
-        value: highRiskAccounts.length,
-      },
-      {
-        detail: "Contas com Índice de Saúde disponível",
-        label: "Saúde média",
-        value: healthAverage,
-      },
-      {
-        detail: "Ações registradas nas fontes atuais",
-        label: "Ações sugeridas",
-        value: risks.filter((risk) => risk.suggestedAction).length,
-      },
-    ],
-    [healthAverage, highRiskAccounts.length, riskAverage, risks],
-  );
-
   const topOpportunities = useMemo(
     () =>
-      [...risks]
-        .sort(
-          (first, second) =>
-            opportunityScore(second.healthScore, second.riskScore) -
-            opportunityScore(first.healthScore, first.riskScore),
-        )
-        .slice(0, 3),
+      [...risks].sort(
+        (first, second) =>
+          opportunityScore(second.healthScore, second.riskScore) -
+          opportunityScore(first.healthScore, first.riskScore),
+      ),
     [risks],
   );
 
   const topOpportunity = topOpportunities[0];
 
-  const executivePulse = useMemo(
-    () => buildExecutivePulse(risks, onboardings, feedbacks),
+  const attentionSignals = useMemo(
+    () => buildAttentionSignals(risks, onboardings, feedbacks),
     [feedbacks, onboardings, risks],
   );
 
-  const trendSignals = useMemo(
-    () => buildTrendSignals(risks, onboardings, feedbacks),
-    [feedbacks, onboardings, risks],
-  );
-
-  const impactSemaphores = useMemo(
-    () => buildImpactSemaphores(risks, onboardings, feedbacks),
+  const ecosystemHealth = useMemo(
+    () => buildEcosystemHealth(risks, onboardings, feedbacks),
     [feedbacks, onboardings, risks],
   );
 
@@ -549,24 +483,25 @@ export function ExecutiveCenter() {
     [initiativeRanking, priorityAccount, topOpportunity],
   );
 
-  const noActionConsequence = priorityAccount
-    ? `Sem ação, ${priorityAccount.accountName} tende a manter ${priorityAccount.riskLevel.toLowerCase()} com risco ${priorityAccount.riskScore}, prolongando ${priorityAccount.mainReason.toLowerCase()}.`
-    : "Sem dados de risco suficientes para projetar consequência.";
+  const expectedOutcomes = useMemo(
+    () => buildExpectedOutcomes(priorityAccount, topOpportunity),
+    [priorityAccount, topOpportunity],
+  );
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6">
+    <div className="mx-auto flex max-w-7xl flex-col gap-5">
       <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-medium text-zinc-500">
-              KV Partners | Camada executiva e operacional
+              KV Partners | Centro de Decisão
             </p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
               Quais decisões precisam ser tomadas agora?
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-              Uma leitura executiva sobre atenção imediata, mudança, investimento,
-              oportunidade e consequência.
+              Uma jornada executiva para entender o problema, escolher a ação,
+              antecipar impacto, observar sinais e avaliar a saúde do ecossistema.
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
@@ -576,87 +511,29 @@ export function ExecutiveCenter() {
         </div>
       </section>
 
-      <QuestionBlock eyebrow="Leitura em poucos segundos" title="Resumo Executivo">
-        <ExecutiveSummaryStrip
-          initiative={initiativeRanking[0]}
-          priorityAccount={priorityAccount}
-          topOpportunity={topOpportunity}
-        />
-      </QuestionBlock>
+      <DecisionStoryBlock
+        isLoading={isLoading}
+        priorityAccount={priorityAccount}
+      />
 
-      <DecisionHighlight action={executivePlan[0]} />
+      <ActionsStoryBlock actions={executivePlan} isLoading={isLoading} />
 
-      <QuestionBlock eyebrow="O que devo fazer?" title="Plano Executivo">
-        <ExecutivePlanGrid actions={executivePlan} />
-      </QuestionBlock>
+      <OutcomesStoryBlock
+        actions={executivePlan}
+        isLoading={isLoading}
+        outcomes={expectedOutcomes}
+      />
 
-      <QuestionBlock
-        eyebrow="O que acontece se eu não agir?"
-        title="Consequência de Não Agir"
-      >
-        <p className="text-sm leading-6 text-zinc-600">{noActionConsequence}</p>
-        {priorityAccount?.suggestedAction ? (
-          <p className="mt-3 text-sm leading-6 text-zinc-600">
-            A conta afetada é {priorityAccount.accountName}. A ação recomendada
-            reduz a chance de atraso na geração de valor, fricção operacional e
-            impacto em adoção ou retenção.
-          </p>
-        ) : null}
-      </QuestionBlock>
+      <AttentionStoryBlock
+        isLoading={isLoading}
+        signals={attentionSignals}
+      />
 
-      <QuestionBlock eyebrow="Inteligência de Decisão" title="Impacto Esperado">
-        <ImpactSemaphoreGrid items={impactSemaphores} />
-      </QuestionBlock>
-
-      <QuestionBlock
-        eyebrow="O que priorizar nos próximos 90 dias?"
-        title="Ranking de Iniciativas"
-      >
-        <InitiativeRankingList initiatives={initiativeRanking} />
-      </QuestionBlock>
-
-      <QuestionBlock
-        eyebrow="Onde crescer?"
-        title="Principais Oportunidades de Expansão"
-      >
-        <ExpansionOpportunityList opportunities={topOpportunities} />
-      </QuestionBlock>
-
-      <QuestionBlock eyebrow="O que mudou?" title="Tendências Identificadas">
-        <TrendList trends={trendSignals} />
-      </QuestionBlock>
-
-      <QuestionBlock
-        eyebrow="Como está a saúde geral?"
-        title="Pulso Executivo"
-      >
-        <ExecutivePulseGrid items={executivePulse} />
-      </QuestionBlock>
-
-      <ExecutiveMetricsBar isLoading={isLoading} metrics={metrics} />
-
-      <IntelligentSummary
-        items={[
-          "A priorização executiva parte do IOI e mantém 07_IOI_Scores como fonte oficial de risco.",
-          "Tendências sem histórico real são marcadas como sinal ou variação simulada para demonstração.",
-          "Investimento e oportunidade usam recomendações, insights e contas já existentes nas fontes atuais.",
-        ]}
-        meta={[
-          { label: "Origem dos dados", value: source === "google-sheets" ? "Google Sheets" : "Planilha pendente" },
-          { label: "Contas lidas", value: accounts.length },
-          { label: "Riscos IOI", value: risks.length },
-          { label: "Contas em risco", value: highRiskAccounts.length },
-        ]}
+      <EcosystemHealthBlock
+        isLoading={isLoading}
+        items={ecosystemHealth}
       />
     </div>
-  );
-}
-
-function Badge({ children }: { children: ReactNode }) {
-  return (
-    <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
-      {children}
-    </span>
   );
 }
 
@@ -669,7 +546,7 @@ function StatusDot({ status }: { status: TrafficStatus }) {
 
   return (
     <span
-      className={cn("size-3 rounded-full shadow-[0_0_0_4px]", statusClass)}
+      className={cn("size-3 shrink-0 rounded-full shadow-[0_0_0_4px]", statusClass)}
     />
   );
 }
@@ -685,7 +562,21 @@ function StatusPill({ status }: { status: TrafficStatus }) {
     <span
       className={cn("rounded-md px-2 py-1 text-xs font-medium", statusClass)}
     >
-      {status}
+      {statusLabel(status)}
+    </span>
+  );
+}
+
+function ImpactPill({ impact }: { impact: AttentionSignal["impact"] }) {
+  const impactClass = {
+    Alto: "bg-red-50 text-red-700",
+    Baixo: "bg-emerald-50 text-emerald-700",
+    Médio: "bg-amber-50 text-amber-700",
+  }[impact];
+
+  return (
+    <span className={cn("rounded-md px-2 py-1 text-xs font-medium", impactClass)}>
+      Impacto {impact}
     </span>
   );
 }
@@ -698,7 +589,7 @@ function EmptyState() {
   );
 }
 
-function QuestionBlock({
+function NarrativeBlock({
   children,
   eyebrow,
   title,
@@ -708,320 +599,245 @@ function QuestionBlock({
   title: string;
 }) {
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-      <p className="text-sm font-medium text-zinc-500">{eyebrow}</p>
+    <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+        {eyebrow}
+      </p>
       <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">
         {title}
       </h2>
-      <div className="mt-3">{children}</div>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
 
-function ExecutiveSummaryStrip({
-  initiative,
-  priorityAccount,
-  topOpportunity,
-}: {
-  initiative: InitiativeRanking | undefined;
-  priorityAccount: RiskRow | undefined;
-  topOpportunity: RiskRow | undefined;
-}) {
-  const items = [
-    {
-      label: "Atenção imediata",
-      value: priorityAccount
-        ? `${priorityAccount.accountName} em risco ${priorityAccount.riskLevel.toLowerCase()}.`
-        : "Sem conta crítica consolidada.",
-    },
-    {
-      label: "Oportunidade",
-      value: topOpportunity
-        ? `${topOpportunity.accountName} pronto para expansão.`
-        : "Sem oportunidade consolidada.",
-    },
-    {
-      label: "Melhor iniciativa",
-      value: initiative?.initiative ?? "Sem iniciativa priorizada.",
-    },
-    {
-      label: "Impacto esperado",
-      value: "Aumento de adoção e retenção.",
-    },
-  ];
-
-  return (
-    <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap">
-      {items.map((item) => (
-        <article
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2"
-          key={item.label}
-        >
-          <p className="shrink-0 text-xs font-medium text-zinc-500">
-            {item.label}:
-          </p>
-          <p className="min-w-0 text-sm font-semibold leading-5 text-zinc-950">
-            {item.value}
-          </p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function DecisionHighlight({ action }: { action: ExecutivePlanAction | undefined }) {
-  if (!action) {
-    return null;
-  }
-
-  return (
-    <section className="rounded-lg border border-zinc-900 bg-zinc-950 px-4 py-3 text-white shadow-sm">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
-            Decisão Recomendada Agora
-          </p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight">
-            {action.title}
-          </h2>
-        </div>
-        <div className="grid gap-2 text-sm lg:grid-cols-4 lg:text-right">
-          <p>
-            <span className="text-zinc-400">Motivo:</span>{" "}
-            {action.reason}
-          </p>
-          <p>
-            <span className="text-zinc-400">Impacto:</span> {action.impact}
-          </p>
-          <p>
-            <span className="text-zinc-400">Prazo:</span>{" "}
-            {action.suggestedDeadline}
-          </p>
-          <p>
-            <span className="text-zinc-400">Status:</span>{" "}
-            {statusLabel(action.status)}
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ExecutivePlanGrid({ actions }: { actions: ExecutivePlanAction[] }) {
-  return (
-    <div className="grid gap-3 lg:grid-cols-3">
-      {actions.map((action, index) => (
-        <article
-          className="rounded-lg border border-zinc-100 bg-zinc-50 p-3"
-          key={`${action.status}-${action.title}`}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-lg font-semibold text-zinc-950">
-              {index + 1}
-            </span>
-            <StatusPill status={action.status} />
-          </div>
-          <p className="mt-2 text-sm font-semibold text-zinc-950">
-            {action.title}
-          </p>
-          <p className="mt-2 text-xs leading-5 text-zinc-600">
-            Motivo: {action.reason}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Badge>Impacto: {action.impact}</Badge>
-            <Badge>Prazo: {action.suggestedDeadline}</Badge>
-            {action.source ? <Badge>Fonte: {action.source}</Badge> : null}
-          </div>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function ExecutivePulseGrid({ items }: { items: ExecutivePulseItem[] }) {
-  return (
-    <div className="grid gap-3 md:grid-cols-5">
-      {items.map((item) => (
-        <article
-          className="rounded-lg border border-zinc-100 bg-zinc-50 p-3"
-          key={item.area}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <StatusDot status={item.status} />
-            <span className="text-base font-semibold text-zinc-950">
-              {item.trend}
-            </span>
-          </div>
-          <p className="mt-2 text-sm font-semibold text-zinc-950">
-            {item.area}
-          </p>
-          <p className="mt-1 text-xs font-medium leading-5 text-zinc-700">
-            {item.metric}
-          </p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function ExecutiveMetricsBar({
+function DecisionStoryBlock({
   isLoading,
-  metrics,
+  priorityAccount,
 }: {
   isLoading: boolean;
-  metrics: Array<{ label: string; value: number | string }>;
+  priorityAccount: RiskRow | undefined;
 }) {
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white px-4 py-3 shadow-sm">
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-        <p className="text-sm font-semibold text-zinc-950">
-          Indicadores Executivos
-        </p>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-600">
-          {metrics.map((metric) => (
-            <span key={metric.label}>
-              <strong className="font-medium text-zinc-950">
-                {metric.label}:
-              </strong>{" "}
-              {isLoading ? "..." : metric.value}
-            </span>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ImpactSemaphoreGrid({ items }: { items: ImpactSemaphore[] }) {
-  return (
-    <div className="grid gap-3 md:grid-cols-4">
-      {items.map((item) => (
-        <article
-          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
-          key={item.area}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <StatusPill status={item.status} />
-            <StatusDot status={item.status} />
+    <NarrativeBlock
+      eyebrow="Principal problema atual"
+      title="🚨 O que está acontecendo?"
+    >
+      {isLoading ? (
+        <EmptyState />
+      ) : priorityAccount ? (
+        <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr] lg:items-stretch">
+          <div className="rounded-lg border border-red-100 bg-red-50/60 p-4">
+            <p className="text-lg font-semibold leading-7 text-zinc-950">
+              {priorityAccount.accountName} apresenta{" "}
+              {priorityAccount.mainReason.toLowerCase()}.
+            </p>
+            <p className="mt-3 text-sm leading-6 text-zinc-700">
+              Isso elevou o Índice de Risco para{" "}
+              <strong className="font-semibold text-zinc-950">
+                {priorityAccount.riskScore} ({priorityAccount.riskLevel})
+              </strong>
+              .
+            </p>
+            <p className="mt-3 text-sm leading-6 text-zinc-700">
+              Impacto potencial: retenção, adoção e geração de valor.
+            </p>
           </div>
-          <p className="mt-4 text-sm font-semibold text-zinc-950">
-            {item.area}
-          </p>
-          <p className="mt-2 text-sm leading-5 text-zinc-600">
-            Impacto esperado: {item.expectedImpact}
-          </p>
-          <p className="text-xs leading-5 text-zinc-500">{item.explanation}</p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function InitiativeRankingList({
-  initiatives,
-}: {
-  initiatives: InitiativeRanking[];
-}) {
-  if (initiatives.length === 0) {
-    return <EmptyState />;
-  }
-
-  return (
-    <div className="grid gap-3 lg:grid-cols-3">
-        {initiatives.map((initiative) => (
-          <article
-            className="rounded-lg border border-zinc-100 bg-zinc-50 p-3"
-            key={initiative.initiative}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xl font-semibold text-zinc-950">
-                {initiative.position}º
-              </span>
-              <Badge>Pontuação {initiative.score}</Badge>
+          <div className="flex flex-col justify-between rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+            <div>
+              <p className="text-sm font-medium text-zinc-500">
+                Ação sugerida
+              </p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-zinc-950">
+                {priorityAccount.suggestedAction ||
+                  "Atuar sobre o principal vetor de risco identificado."}
+              </p>
             </div>
-            <p className="mt-2 text-sm font-semibold text-zinc-950">
-              {initiative.initiative}
-            </p>
-            <p className="mt-2 text-sm leading-5 text-zinc-600">
-              Impacto esperado: {initiative.expectedImpact}
-            </p>
-            <p className="text-sm leading-5 text-zinc-600">
-              Prioridade: {initiative.priority}
-            </p>
-            <p className="text-sm leading-5 text-zinc-600">
-              Área responsável: {initiative.area}
-            </p>
-            <p className="mt-2 text-xs leading-5 text-zinc-500">
-              {initiative.justification}
-            </p>
-          </article>
-        ))}
-    </div>
-  );
-}
-
-function ExpansionOpportunityList({
-  opportunities,
-}: {
-  opportunities: RiskRow[];
-}) {
-  if (opportunities.length === 0) {
-    return <EmptyState />;
-  }
-
-  return (
-    <div className="overflow-hidden rounded-lg border border-zinc-100">
-      <table className="w-full min-w-[720px] text-left text-sm">
-        <thead className="bg-zinc-50 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500">
-          <tr>
-            <th className="px-4 py-3">Conta</th>
-            <th className="px-4 py-3">Potencial</th>
-            <th className="px-4 py-3">Próxima ação</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-zinc-100 bg-white">
-          {opportunities.map((opportunity) => (
-            <tr key={opportunity.accountId}>
-              <td className="px-4 py-3 font-medium text-zinc-950">
-                {opportunity.accountName}
-              </td>
-              <td className="px-4 py-3 text-zinc-700">
-                {opportunityScore(
-                  opportunity.healthScore,
-                  opportunity.riskScore,
-                )}
-              </td>
-              <td className="px-4 py-3 text-zinc-600">
-                {opportunity.suggestedAction ||
-                  "Avaliar expansão comercial com base no contexto da conta."}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function TrendList({ trends }: { trends: TrendSignal[] }) {
-  return (
-    <div className="grid gap-2 lg:grid-cols-3">
-      {trends.map((trend) => (
-        <div
-          className="flex items-center justify-between gap-3 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2"
-          key={trend.description}
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-base font-semibold text-zinc-950">
-              {trend.direction}
-            </span>
-            <p className="text-sm font-medium text-zinc-950">
-              {trend.description}
+            <p className="mt-4 text-xs font-medium text-zinc-500">
+              Fonte oficial: 07_IOI_Scores
             </p>
           </div>
-          <Badge>Impacto {trend.impact}</Badge>
         </div>
-      ))}
-    </div>
+      ) : (
+        <EmptyState />
+      )}
+    </NarrativeBlock>
+  );
+}
+
+function ActionsStoryBlock({
+  actions,
+  isLoading,
+}: {
+  actions: ExecutivePlanAction[];
+  isLoading: boolean;
+}) {
+  return (
+    <NarrativeBlock
+      eyebrow="Próxima decisão"
+      title="📋 O que devemos fazer?"
+    >
+      {isLoading || actions.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <div className="grid gap-3 lg:grid-cols-3">
+          {actions.map((action, index) => (
+            <article
+              className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+              key={action.title}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-lg font-semibold text-zinc-950">
+                  {index + 1}
+                </span>
+                <StatusPill status={action.status} />
+              </div>
+              <p className="mt-3 text-sm font-semibold leading-6 text-zinc-950">
+                {action.title}
+              </p>
+              <p className="mt-2 text-sm leading-5 text-zinc-600">
+                Motivo: {action.reason}
+              </p>
+              <p className="mt-2 text-xs font-medium text-zinc-500">
+                Responsável: {action.owner}
+              </p>
+            </article>
+          ))}
+        </div>
+      )}
+    </NarrativeBlock>
+  );
+}
+
+function OutcomesStoryBlock({
+  actions,
+  isLoading,
+  outcomes,
+}: {
+  actions: ExecutivePlanAction[];
+  isLoading: boolean;
+  outcomes: ExpectedOutcome[];
+}) {
+  const mainAction = actions[0];
+
+  return (
+    <NarrativeBlock
+      eyebrow="Impacto esperado"
+      title="🎯 O que acontece se fizermos?"
+    >
+      {isLoading || !mainAction ? (
+        <EmptyState />
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+            <p className="text-sm font-medium text-zinc-500">
+              Ação principal
+            </p>
+            <p className="mt-2 text-lg font-semibold leading-7 text-zinc-950">
+              {mainAction.title}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-zinc-600">
+              Impacto esperado: {mainAction.impact}.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {outcomes.map((outcome) => (
+              <div
+                className="flex items-start gap-3 rounded-lg border border-zinc-100 bg-white p-3"
+                key={outcome.description}
+              >
+                <StatusDot status={outcome.tone} />
+                <p className="text-sm leading-5 text-zinc-700">
+                  {outcome.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </NarrativeBlock>
+  );
+}
+
+function AttentionStoryBlock({
+  isLoading,
+  signals,
+}: {
+  isLoading: boolean;
+  signals: AttentionSignal[];
+}) {
+  return (
+    <NarrativeBlock
+      eyebrow="Sinais executivos"
+      title="📡 O que está chamando atenção agora"
+    >
+      {isLoading || signals.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <div className="grid gap-3 lg:grid-cols-3">
+          {signals.map((signal) => (
+            <article
+              className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+              key={signal.message}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <StatusDot
+                  status={
+                    signal.impact === "Alto"
+                      ? "Vermelho"
+                      : signal.impact === "Médio"
+                        ? "Amarelo"
+                        : "Verde"
+                  }
+                />
+                <ImpactPill impact={signal.impact} />
+              </div>
+              <p className="mt-3 text-sm leading-6 text-zinc-700">
+                {signal.message}
+              </p>
+            </article>
+          ))}
+        </div>
+      )}
+    </NarrativeBlock>
+  );
+}
+
+function EcosystemHealthBlock({
+  isLoading,
+  items,
+}: {
+  isLoading: boolean;
+  items: ExecutiveHealthItem[];
+}) {
+  return (
+    <NarrativeBlock
+      eyebrow="Estado geral"
+      title="🚦 Saúde do ecossistema"
+    >
+      {isLoading || items.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <div className="grid gap-3 md:grid-cols-5">
+          {items.map((item) => (
+            <article
+              className="rounded-lg border border-zinc-100 bg-zinc-50 p-3"
+              key={item.area}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <StatusDot status={item.status} />
+                <StatusPill status={item.status} />
+              </div>
+              <p className="mt-3 text-sm font-semibold text-zinc-950">
+                {item.area}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-zinc-600">
+                {item.reason}
+              </p>
+            </article>
+          ))}
+        </div>
+      )}
+    </NarrativeBlock>
   );
 }
