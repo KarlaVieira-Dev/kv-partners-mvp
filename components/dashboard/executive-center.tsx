@@ -15,7 +15,7 @@ import type {
   RisksResponse,
 } from "@/lib/google-sheets/types";
 import { cn } from "@/lib/utils";
-import { IntelligentSummary, KPIGrid } from "./shared";
+import { IntelligentSummary } from "./shared";
 
 const average = (values: number[]) => {
   if (values.length === 0) {
@@ -49,6 +49,9 @@ const isPriority = (value: string) => {
     normalized.includes("prioritaria")
   );
 };
+
+const statusLabel = (status: TrafficStatus) =>
+  status === "Vermelho" ? "Crítico" : status === "Amarelo" ? "Atenção" : "Oportunidade";
 
 const opportunityScore = (healthScore: number, riskScore: number) =>
   Math.round(healthScore - riskScore * 0.5);
@@ -315,7 +318,7 @@ const buildExecutivePlan = (
     {
       impact: "Retenção e adoção",
       reason: priorityAccount
-        ? `Maior risco consolidado do ecossistema: Índice de Risco ${priorityAccount.riskScore}, nível ${priorityAccount.riskLevel}.`
+        ? `${priorityAccount.mainReason}. Maior risco consolidado do ecossistema.`
         : "Sem conta crítica consolidada nas fontes atuais.",
       source: "07_IOI_Scores",
       status: isCritical ? "Vermelho" : "Amarelo",
@@ -581,6 +584,8 @@ export function ExecutiveCenter() {
         />
       </QuestionBlock>
 
+      <DecisionHighlight action={executivePlan[0]} />
+
       <QuestionBlock eyebrow="O que devo fazer?" title="Plano Executivo">
         <ExecutivePlanGrid actions={executivePlan} />
       </QuestionBlock>
@@ -619,11 +624,6 @@ export function ExecutiveCenter() {
 
       <QuestionBlock eyebrow="O que mudou?" title="Tendências Identificadas">
         <TrendList trends={trendSignals} />
-        <p className="mt-4 text-xs leading-5 text-zinc-500">
-          Leitura baseada no recorte atual das fontes. Onde não há histórico
-          temporal suficiente, a variação é tratada como sinal de tendência para
-          demonstração.
-        </p>
       </QuestionBlock>
 
       <QuestionBlock
@@ -633,7 +633,7 @@ export function ExecutiveCenter() {
         <ExecutivePulseGrid items={executivePulse} />
       </QuestionBlock>
 
-      <KPIGrid isLoading={isLoading} metrics={metrics} />
+      <ExecutiveMetricsBar isLoading={isLoading} metrics={metrics} />
 
       <IntelligentSummary
         items={[
@@ -708,12 +708,12 @@ function QuestionBlock({
   title: string;
 }) {
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+    <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
       <p className="text-sm font-medium text-zinc-500">{eyebrow}</p>
       <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">
         {title}
       </h2>
-      <div className="mt-4">{children}</div>
+      <div className="mt-3">{children}</div>
     </section>
   );
 }
@@ -751,14 +751,16 @@ function ExecutiveSummaryStrip({
   ];
 
   return (
-    <div className="grid gap-3 md:grid-cols-4">
+    <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap">
       {items.map((item) => (
         <article
-          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2"
           key={item.label}
         >
-          <p className="text-xs font-medium text-zinc-500">{item.label}</p>
-          <p className="mt-2 text-sm font-semibold leading-6 text-zinc-950">
+          <p className="shrink-0 text-xs font-medium text-zinc-500">
+            {item.label}:
+          </p>
+          <p className="min-w-0 text-sm font-semibold leading-5 text-zinc-950">
             {item.value}
           </p>
         </article>
@@ -767,34 +769,67 @@ function ExecutiveSummaryStrip({
   );
 }
 
+function DecisionHighlight({ action }: { action: ExecutivePlanAction | undefined }) {
+  if (!action) {
+    return null;
+  }
+
+  return (
+    <section className="rounded-lg border border-zinc-900 bg-zinc-950 px-4 py-3 text-white shadow-sm">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
+            Decisão Recomendada Agora
+          </p>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight">
+            {action.title}
+          </h2>
+        </div>
+        <div className="grid gap-2 text-sm lg:grid-cols-4 lg:text-right">
+          <p>
+            <span className="text-zinc-400">Motivo:</span>{" "}
+            {action.reason}
+          </p>
+          <p>
+            <span className="text-zinc-400">Impacto:</span> {action.impact}
+          </p>
+          <p>
+            <span className="text-zinc-400">Prazo:</span>{" "}
+            {action.suggestedDeadline}
+          </p>
+          <p>
+            <span className="text-zinc-400">Status:</span>{" "}
+            {statusLabel(action.status)}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ExecutivePlanGrid({ actions }: { actions: ExecutivePlanAction[] }) {
   return (
     <div className="grid gap-3 lg:grid-cols-3">
       {actions.map((action, index) => (
         <article
-          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+          className="rounded-lg border border-zinc-100 bg-zinc-50 p-3"
           key={`${action.status}-${action.title}`}
         >
           <div className="flex items-center justify-between gap-2">
-            <span className="text-2xl font-semibold text-zinc-950">
+            <span className="text-lg font-semibold text-zinc-950">
               {index + 1}
             </span>
             <StatusPill status={action.status} />
           </div>
-          <p className="mt-4 text-base font-semibold text-zinc-950">
+          <p className="mt-2 text-sm font-semibold text-zinc-950">
             {action.title}
           </p>
-          <p className="mt-3 text-sm leading-6 text-zinc-600">
+          <p className="mt-2 text-xs leading-5 text-zinc-600">
             Motivo: {action.reason}
           </p>
-          {action.suggestedAction ? (
-            <p className="mt-2 text-sm leading-6 text-zinc-600">
-              Ação sugerida: {action.suggestedAction}
-            </p>
-          ) : null}
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             <Badge>Impacto: {action.impact}</Badge>
-            <Badge>Prazo sugerido: {action.suggestedDeadline}</Badge>
+            <Badge>Prazo: {action.suggestedDeadline}</Badge>
             {action.source ? <Badge>Fonte: {action.source}</Badge> : null}
           </div>
         </article>
@@ -808,30 +843,52 @@ function ExecutivePulseGrid({ items }: { items: ExecutivePulseItem[] }) {
     <div className="grid gap-3 md:grid-cols-5">
       {items.map((item) => (
         <article
-          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+          className="rounded-lg border border-zinc-100 bg-zinc-50 p-3"
           key={item.area}
         >
           <div className="flex items-center justify-between gap-2">
             <StatusDot status={item.status} />
-            <span className="text-lg font-semibold text-zinc-950">
+            <span className="text-base font-semibold text-zinc-950">
               {item.trend}
             </span>
           </div>
-          <p className="mt-4 text-sm font-semibold text-zinc-950">
+          <p className="mt-2 text-sm font-semibold text-zinc-950">
             {item.area}
           </p>
-          <div className="mt-2">
-            <StatusPill status={item.status} />
-          </div>
-          <p className="mt-3 text-sm font-medium leading-5 text-zinc-700">
+          <p className="mt-1 text-xs font-medium leading-5 text-zinc-700">
             {item.metric}
-          </p>
-          <p className="mt-2 text-xs leading-5 text-zinc-500">
-            {item.reason}
           </p>
         </article>
       ))}
     </div>
+  );
+}
+
+function ExecutiveMetricsBar({
+  isLoading,
+  metrics,
+}: {
+  isLoading: boolean;
+  metrics: Array<{ label: string; value: number | string }>;
+}) {
+  return (
+    <section className="rounded-lg border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+        <p className="text-sm font-semibold text-zinc-950">
+          Indicadores Executivos
+        </p>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-600">
+          {metrics.map((metric) => (
+            <span key={metric.label}>
+              <strong className="font-medium text-zinc-950">
+                {metric.label}:
+              </strong>{" "}
+              {isLoading ? "..." : metric.value}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -850,7 +907,7 @@ function ImpactSemaphoreGrid({ items }: { items: ImpactSemaphore[] }) {
           <p className="mt-4 text-sm font-semibold text-zinc-950">
             {item.area}
           </p>
-          <p className="mt-3 text-sm leading-6 text-zinc-600">
+          <p className="mt-2 text-sm leading-5 text-zinc-600">
             Impacto esperado: {item.expectedImpact}
           </p>
           <p className="text-xs leading-5 text-zinc-500">{item.explanation}</p>
@@ -870,44 +927,36 @@ function InitiativeRankingList({
   }
 
   return (
-    <section className="rounded-lg border border-zinc-100 bg-zinc-50 p-4">
-      <p className="text-sm font-medium text-zinc-500">
-        O que priorizar nos próximos 90 dias?
-      </p>
-      <h3 className="mt-2 text-lg font-semibold tracking-tight text-zinc-950">
-        Ranking de Iniciativas
-      </h3>
-      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+    <div className="grid gap-3 lg:grid-cols-3">
         {initiatives.map((initiative) => (
           <article
-            className="rounded-lg border border-zinc-200 bg-white p-4"
+            className="rounded-lg border border-zinc-100 bg-zinc-50 p-3"
             key={initiative.initiative}
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="text-2xl font-semibold text-zinc-950">
+              <span className="text-xl font-semibold text-zinc-950">
                 {initiative.position}º
               </span>
               <Badge>Pontuação {initiative.score}</Badge>
             </div>
-            <p className="mt-4 text-sm font-semibold text-zinc-950">
+            <p className="mt-2 text-sm font-semibold text-zinc-950">
               {initiative.initiative}
             </p>
-            <p className="mt-3 text-sm leading-6 text-zinc-600">
+            <p className="mt-2 text-sm leading-5 text-zinc-600">
               Impacto esperado: {initiative.expectedImpact}
             </p>
-            <p className="text-sm leading-6 text-zinc-600">
+            <p className="text-sm leading-5 text-zinc-600">
               Prioridade: {initiative.priority}
             </p>
-            <p className="text-sm leading-6 text-zinc-600">
+            <p className="text-sm leading-5 text-zinc-600">
               Área responsável: {initiative.area}
             </p>
-            <p className="mt-3 text-xs leading-5 text-zinc-500">
+            <p className="mt-2 text-xs leading-5 text-zinc-500">
               {initiative.justification}
             </p>
           </article>
         ))}
-      </div>
-    </section>
+    </div>
   );
 }
 
@@ -921,58 +970,56 @@ function ExpansionOpportunityList({
   }
 
   return (
-    <div className="grid gap-3 lg:grid-cols-3">
-      {opportunities.map((opportunity) => (
-        <article
-          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
-          key={opportunity.accountId}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-zinc-950">
-              {opportunity.accountName}
-            </p>
-            <Badge>
-              Potencial{" "}
-              {opportunityScore(
-                opportunity.healthScore,
-                opportunity.riskScore,
-              )}
-            </Badge>
-          </div>
-          <p className="mt-3 text-sm leading-6 text-zinc-600">
-            Motivo: Índice de Saúde alto combinado ao risco atual.
-          </p>
-          <p className="mt-2 text-sm leading-6 text-zinc-600">
-            Próxima ação:{" "}
-            {opportunity.suggestedAction ||
-              "avaliar expansão comercial com base no contexto da conta."}
-          </p>
-        </article>
-      ))}
+    <div className="overflow-hidden rounded-lg border border-zinc-100">
+      <table className="w-full min-w-[720px] text-left text-sm">
+        <thead className="bg-zinc-50 text-xs font-medium uppercase tracking-[0.08em] text-zinc-500">
+          <tr>
+            <th className="px-4 py-3">Conta</th>
+            <th className="px-4 py-3">Potencial</th>
+            <th className="px-4 py-3">Próxima ação</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-zinc-100 bg-white">
+          {opportunities.map((opportunity) => (
+            <tr key={opportunity.accountId}>
+              <td className="px-4 py-3 font-medium text-zinc-950">
+                {opportunity.accountName}
+              </td>
+              <td className="px-4 py-3 text-zinc-700">
+                {opportunityScore(
+                  opportunity.healthScore,
+                  opportunity.riskScore,
+                )}
+              </td>
+              <td className="px-4 py-3 text-zinc-600">
+                {opportunity.suggestedAction ||
+                  "Avaliar expansão comercial com base no contexto da conta."}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
 
 function TrendList({ trends }: { trends: TrendSignal[] }) {
   return (
-    <div className="space-y-3">
+    <div className="grid gap-2 lg:grid-cols-3">
       {trends.map((trend) => (
         <div
-          className="border-t border-zinc-100 pt-3 first:border-t-0 first:pt-0"
+          className="flex items-center justify-between gap-3 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2"
           key={trend.description}
         >
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-lg font-semibold text-zinc-950">
+            <span className="text-base font-semibold text-zinc-950">
               {trend.direction}
             </span>
-            <p className="text-sm font-semibold text-zinc-950">
+            <p className="text-sm font-medium text-zinc-950">
               {trend.description}
             </p>
-            <Badge>Impacto {trend.impact}</Badge>
           </div>
-          <p className="mt-2 text-sm leading-6 text-zinc-600">
-            {trend.justification}
-          </p>
+          <Badge>Impacto {trend.impact}</Badge>
         </div>
       ))}
     </div>
