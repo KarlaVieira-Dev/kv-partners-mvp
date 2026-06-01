@@ -41,6 +41,9 @@ const riskColor = (score: number) => {
   return "bg-emerald-50 text-emerald-700";
 };
 
+const opportunityScore = (healthScore: number, riskScore: number) =>
+  Math.round(healthScore - riskScore * 0.5);
+
 const average = (values: number[]) => {
   if (values.length === 0) {
     return 0;
@@ -69,6 +72,7 @@ export function AccountsCenter() {
   const [type, setType] = useState("Todos");
   const [segment, setSegment] = useState("Todos");
   const [status, setStatus] = useState("Todos");
+  const [sortByOpportunity, setSortByOpportunity] = useState(true);
 
   useEffect(() => {
     async function loadAccounts() {
@@ -97,7 +101,7 @@ export function AccountsCenter() {
   );
 
   const filteredAccounts = useMemo(() => {
-    return accounts.filter((account) => {
+    const filtered = accounts.filter((account) => {
       const matchesSearch = account.account
         .toLowerCase()
         .includes(search.toLowerCase());
@@ -108,7 +112,17 @@ export function AccountsCenter() {
 
       return matchesSearch && matchesType && matchesSegment && matchesStatus;
     });
-  }, [accounts, search, segment, status, type]);
+
+    if (!sortByOpportunity) {
+      return filtered;
+    }
+
+    return [...filtered].sort(
+      (first, second) =>
+        opportunityScore(second.healthScore, second.riskScore) -
+        opportunityScore(first.healthScore, first.riskScore),
+    );
+  }, [accounts, search, segment, sortByOpportunity, status, type]);
 
   const metrics = useMemo(
     () => [
@@ -198,6 +212,18 @@ export function AccountsCenter() {
               value={status}
             />
           </div>
+          <button
+            className={cn(
+              "h-10 rounded-lg border px-3 text-sm font-medium transition",
+              sortByOpportunity
+                ? "border-zinc-950 bg-zinc-950 text-white"
+                : "border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100",
+            )}
+            onClick={() => setSortByOpportunity((current) => !current)}
+            type="button"
+          >
+            Opportunity Score ↓
+          </button>
       </FilterBar>
 
       <DataTable
@@ -237,6 +263,14 @@ export function AccountsCenter() {
               </span>
             ),
           },
+          {
+            header: "Opportunity Score",
+            render: (account) => (
+              <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
+                {opportunityScore(account.healthScore, account.riskScore)}
+              </span>
+            ),
+          },
           { header: "Plano", render: (account) => account.plan },
           { header: "Cidade", render: (account) => account.city },
           { header: "Estado", render: (account) => account.state },
@@ -244,7 +278,7 @@ export function AccountsCenter() {
         emptyMessage="Nenhuma conta corresponde aos filtros selecionados."
         getRowKey={(account) => account.account}
         isLoading={isLoading}
-        minWidth="1120px"
+        minWidth="1240px"
         rows={paginatedRows}
         title="Contas"
       />

@@ -65,6 +65,9 @@ const riskColor = (level: string) => {
   return "bg-emerald-50 text-emerald-700";
 };
 
+const opportunityScore = (healthScore: number, riskScore: number) =>
+  Math.round(healthScore - riskScore * 0.5);
+
 const unique = (items: string[]) =>
   Array.from(new Set(items.map((item) => item.trim()).filter(Boolean)));
 
@@ -189,21 +192,23 @@ export function ExecutiveCenter() {
     ]).slice(0, 4);
   }, [growth.recommendations, highRiskAccounts, onboardings]);
 
-  const topOpportunity = useMemo(() => {
-    const recommendation = [...growth.recommendations].sort(
-      (first, second) => second.opportunityScore - first.opportunityScore,
-    )[0];
-    const account = [...accounts]
-      .filter((item) => item.healthScore >= 80)
-      .sort((first, second) => second.healthScore - first.healthScore)[0];
-    const insight = growth.insights.find((item) => isPriority(item.impact));
+  const topOpportunity = useMemo(
+    () =>
+      [...risks].sort(
+        (first, second) =>
+          opportunityScore(second.healthScore, second.riskScore) -
+          opportunityScore(first.healthScore, first.riskScore),
+      )[0],
+    [risks],
+  );
 
-    return {
-      account,
-      insight,
-      recommendation,
-    };
-  }, [accounts, growth.insights, growth.recommendations]);
+  const primaryRecommendation = useMemo(
+    () =>
+      [...growth.recommendations].sort(
+        (first, second) => second.opportunityScore - first.opportunityScore,
+      )[0],
+    [growth.recommendations],
+  );
 
   const trendSignal = useMemo(() => {
     const critical = risks.filter((risk) =>
@@ -312,29 +317,33 @@ export function ExecutiveCenter() {
 
         <QuestionBlock
           eyebrow="4. Qual oportunidade gera mais valor?"
-          title={
-            topOpportunity.account?.account ??
-            topOpportunity.recommendation?.recommendation ??
-            "Sem oportunidade consolidada"
-          }
+          title={topOpportunity?.accountName ?? "Sem oportunidade consolidada"}
         >
-          <div className="space-y-3 text-sm leading-6 text-zinc-600">
-            {topOpportunity.account ? (
+          {topOpportunity ? (
+            <div className="space-y-3 text-sm leading-6 text-zinc-600">
+              <div className="flex flex-wrap gap-2">
+                <Badge>
+                  Opportunity Score{" "}
+                  {opportunityScore(
+                    topOpportunity.healthScore,
+                    topOpportunity.riskScore,
+                  )}
+                </Badge>
+                <Badge>Health Score {topOpportunity.healthScore}</Badge>
+                <Badge>Risk Score {topOpportunity.riskScore}</Badge>
+              </div>
               <p>
-                Conta com Health Score {topOpportunity.account.healthScore} e
-                status {topOpportunity.account.status}.
+                <strong className="text-zinc-950">Motivo:</strong>{" "}
+                {topOpportunity.mainReason}
               </p>
-            ) : null}
-            {topOpportunity.recommendation ? (
-              <p>{topOpportunity.recommendation.recommendation}</p>
-            ) : null}
-            {topOpportunity.insight ? <p>{topOpportunity.insight.insight}</p> : null}
-            {!topOpportunity.account &&
-            !topOpportunity.recommendation &&
-            !topOpportunity.insight ? (
-              <EmptyState />
-            ) : null}
-          </div>
+              <p>
+                <strong className="text-zinc-950">Ação sugerida:</strong>{" "}
+                {topOpportunity.suggestedAction}
+              </p>
+            </div>
+          ) : (
+            <EmptyState />
+          )}
         </QuestionBlock>
 
         <QuestionBlock
@@ -352,6 +361,17 @@ export function ExecutiveCenter() {
           ) : null}
         </QuestionBlock>
       </section>
+
+      <QuestionBlock
+        eyebrow="Decision Intelligence"
+        title="Impacto esperado"
+      >
+        <p className="text-sm leading-6 text-zinc-600">
+          {primaryRecommendation
+            ? `${primaryRecommendation.recommendation} pode gerar ${primaryRecommendation.estimatedImpact.toLowerCase()} e deve ser tratado como prioridade ${primaryRecommendation.priority.toLowerCase()}.`
+            : "Sem recomendação estratégica suficiente para estimar impacto nas fontes atuais."}
+        </p>
+      </QuestionBlock>
 
       <IntelligentSummary
         items={[

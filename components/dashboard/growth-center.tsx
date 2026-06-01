@@ -3,7 +3,7 @@
 import { Radar, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import type { GrowthResponse } from "@/lib/google-sheets/types";
+import type { GrowthResponse, RiskRow, RisksResponse } from "@/lib/google-sheets/types";
 import { cn } from "@/lib/utils";
 import {
   DataTable,
@@ -69,6 +69,9 @@ const isHighPriority = (value: string) => {
   return normalized.includes("alta") || normalized.includes("crit");
 };
 
+const opportunityScore = (healthScore: number, riskScore: number) =>
+  Math.round(healthScore - riskScore * 0.5);
+
 type OpportunityRadarRow = {
   area: string;
   description: string;
@@ -77,6 +80,7 @@ type OpportunityRadarRow = {
 
 export function GrowthCenter() {
   const [growth, setGrowth] = useState<GrowthResponse>(emptyGrowth);
+  const [risks, setRisks] = useState<RiskRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [strategicCategory, setStrategicCategory] = useState("Todos");
@@ -98,8 +102,12 @@ export function GrowthCenter() {
   useEffect(() => {
     async function loadGrowth() {
       try {
-        const response = await fetch("/api/growth");
-        const data = (await response.json()) as GrowthResponse;
+        const [growthResponse, risksResponse] = await Promise.all([
+          fetch("/api/growth"),
+          fetch("/api/risks"),
+        ]);
+        const data = (await growthResponse.json()) as GrowthResponse;
+        const risksData = (await risksResponse.json()) as RisksResponse;
 
         setGrowth({
           ...emptyGrowth,
@@ -108,6 +116,7 @@ export function GrowthCenter() {
           competitiveRadar: data.competitiveRadar ?? [],
           marketTrends: data.marketTrends ?? [],
         });
+        setRisks(risksData.risks);
       } finally {
         setIsLoading(false);
       }
@@ -268,6 +277,18 @@ export function GrowthCenter() {
     ];
   }, [growth]);
 
+  const topOpportunities = useMemo(
+    () =>
+      [...risks]
+        .sort(
+          (first, second) =>
+            opportunityScore(second.healthScore, second.riskScore) -
+            opportunityScore(first.healthScore, first.riskScore),
+        )
+        .slice(0, 3),
+    [risks],
+  );
+
   const opportunityRadarRows = useMemo<OpportunityRadarRow[]>(
     () => [
       {
@@ -351,6 +372,43 @@ export function GrowthCenter() {
       </section>
 
       <KPIGrid isLoading={isLoading} metrics={metrics} />
+
+      <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm font-medium text-zinc-500">
+              Opportunity Intelligence
+            </p>
+            <h2 className="text-xl font-semibold tracking-tight text-zinc-950">
+              Top Oportunidades
+            </h2>
+          </div>
+          <p className="text-sm text-zinc-500">
+            Opportunity = Health Score - (Risk Score * 0.5)
+          </p>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          {topOpportunities.map((opportunity) => (
+            <article
+              className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+              key={opportunity.accountId}
+            >
+              <p className="text-sm font-semibold text-zinc-950">
+                {opportunity.accountName}
+              </p>
+              <p className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950">
+                {opportunityScore(
+                  opportunity.healthScore,
+                  opportunity.riskScore,
+                )}
+              </p>
+              <p className="mt-2 text-xs text-zinc-500">
+                Health {opportunity.healthScore} | Risk {opportunity.riskScore}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <FilterBar>
         <FilterLabel text="Filtros estratégicos" />

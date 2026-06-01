@@ -234,6 +234,25 @@ export function RiskCenter() {
         </div>
       </section>
 
+      <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+        <p className="text-sm font-medium text-zinc-500">
+          O que acontece se não atuarmos?
+        </p>
+        <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">
+          Consequência provável
+        </h2>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-600">
+          {priorityAccount
+            ? `Se ${priorityAccount.accountName} permanecer em ${priorityAccount.riskLevel.toLowerCase()}, o motivo principal (${priorityAccount.mainReason.toLowerCase()}) tende a manter a conta exposta a fricção operacional, atraso na adoção e impacto em retenção.`
+            : "Sem dados suficientes para gerar narrativa de consequência."}
+        </p>
+        {priorityAccount?.suggestedAction ? (
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-600">
+            Ação recomendada: {priorityAccount.suggestedAction}
+          </p>
+        ) : null}
+      </section>
+
       <FilterBar>
           <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
             <Search className="size-4 text-zinc-400" />

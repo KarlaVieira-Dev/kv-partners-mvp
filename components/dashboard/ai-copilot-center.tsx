@@ -57,6 +57,7 @@ const quickQuestions = [
   "Quais tendências merecem investimento?",
   "Onde devemos investir nos próximos 90 dias?",
   "Qual funcionalidade possui maior oportunidade?",
+  "Qual iniciativa gera maior impacto?",
 ];
 
 const emptyGrowth: GrowthResponse = {
@@ -255,6 +256,33 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
         riskyAccounts.length > 0
           ? `${riskyAccounts.length} conta(s) combinam sinais de risco, saúde e onboarding para priorização executiva.`
           : "Nenhuma conta com atenção prioritária foi identificada.",
+    };
+  }
+
+  if (
+    normalizedQuestion.includes("iniciativa") &&
+    normalizedQuestion.includes("maior impacto")
+  ) {
+    const initiatives = topBy(
+      data.growth.recommendations,
+      recommendationScore,
+      5,
+    );
+
+    return {
+      accounts: [],
+      data: initiatives.map(
+        (initiative, index) =>
+          `${index + 1}. ${initiative.recommendation}: impacto esperado ${initiative.estimatedImpact}; prioridade ${initiative.priority}.`,
+      ),
+      recommendations: initiatives.map(
+        (initiative) =>
+          `Iniciativa: ${initiative.recommendation}. Impacto esperado: ${initiative.estimatedImpact}. Prioridade: ${initiative.priority}.`,
+      ),
+      summary:
+        initiatives.length > 0
+          ? `A iniciativa com maior impacto esperado é ${initiatives[0].recommendation}, com prioridade ${initiatives[0].priority}.`
+          : "Nenhuma iniciativa com impacto estimado foi encontrada nas recomendações atuais.",
     };
   }
 
