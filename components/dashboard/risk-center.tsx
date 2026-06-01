@@ -177,14 +177,14 @@ export function RiskCenter() {
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-medium text-zinc-500">
-              Inteligência de Identidade e Onboarding
+              IOI | Inteligência especializada de risco
             </p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
-              Centro de Riscos
+              Quem está em risco agora?
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-              Monitore risco, saúde, acesso, uso, onboarding e sinais de
-              feedback por conta.
+              A leitura do IOI responde quem exige atenção, por que está em
+              risco e o que pode acontecer se não atuarmos.
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
@@ -199,7 +199,7 @@ export function RiskCenter() {
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
         <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-zinc-500">
-            Conta prioritária
+            Quem exige atenção primeiro?
           </p>
           <h2 className="mt-2 text-xl font-semibold text-zinc-950">
             {priorityAccount?.accountName ?? "Nenhuma conta"}
@@ -219,7 +219,7 @@ export function RiskCenter() {
 
         <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-zinc-500">
-            Distribuição de risco
+            Quem está em risco por nível?
           </p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {riskDistribution.map((item) => (
@@ -237,7 +237,9 @@ export function RiskCenter() {
       <FilterBar>
           <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
             <Search className="size-4 text-zinc-400" />
-            <span className="px-3 text-sm text-zinc-500">Tabela de riscos</span>
+            <span className="px-3 text-sm text-zinc-500">
+              Por que essas contas exigem atenção?
+            </span>
           </div>
           <div className="grid gap-3 sm:grid-cols-3 lg:w-[540px]">
             <FilterSelect
@@ -321,7 +323,7 @@ export function RiskCenter() {
         isLoading={isLoading}
         minWidth="1120px"
         rows={paginatedRows}
-        title="Tabela de riscos"
+        title="Por que essas contas exigem atenção?"
       />
 
       <Pagination
@@ -332,14 +334,15 @@ export function RiskCenter() {
 
       <IntelligentSummary
         items={[
-          "A conta prioritária indica a maior exposição consolidada no momento.",
-          "A distribuição de risco orienta onde concentrar a cadência executiva.",
-          "Motivo principal e ação sugerida conectam diagnóstico operacional com próximo passo.",
+          "Contas em nível Alto ou Crítico exigem atuação antes que o risco avance para retenção, adoção ou valor percebido.",
+          "O motivo principal explica por que a conta está em risco sem reinterpretar a fonte 07_IOI_Scores.",
+          "A ação recomendada mostra o próximo passo para reduzir exposição operacional.",
         ]}
         meta={[
           { label: "Riscos filtrados", value: filteredRisks.length },
           { label: "Ações sugeridas", value: metrics[4]?.value ?? 0 },
         ]}
+        title="O que pode acontecer se não atuarmos?"
       />
     </div>
   );
