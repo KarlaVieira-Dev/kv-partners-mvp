@@ -29,8 +29,14 @@ const average = (values: number[]) => {
   );
 };
 
+const normalize = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
 const riskColor = (level: string) => {
-  const normalizedLevel = level.toLowerCase();
+  const normalizedLevel = normalize(level);
 
   if (normalizedLevel.includes("crit")) {
     return "bg-red-50 text-red-700";
@@ -106,6 +112,39 @@ export function RiskCenter() {
       [...risks].sort((first, second) => second.riskScore - first.riskScore)[0],
     [risks],
   );
+
+  const riskVectors = useMemo(() => {
+    const vectors = [
+      { label: "Onboarding", getScore: (risk: RiskRow) => risk.onboardingScore },
+      { label: "Adoção", getScore: (risk: RiskRow) => risk.usageScore },
+      { label: "Acessos", getScore: (risk: RiskRow) => risk.accessScore },
+      { label: "Feedback", getScore: (risk: RiskRow) => risk.feedbackScore },
+    ];
+
+    return vectors
+      .map((vector) => {
+        const exposedAccounts = risks.filter((risk) => vector.getScore(risk) < 70);
+        const severity = average(
+          risks.map((risk) => Math.max(0, 100 - vector.getScore(risk))),
+        );
+
+        return {
+          impact:
+            severity >= 45 || exposedAccounts.length >= 3
+              ? "Alto"
+              : severity >= 25 || exposedAccounts.length >= 1
+                ? "Médio"
+                : "Baixo",
+          label: vector.label,
+          severity,
+          volume: exposedAccounts.length,
+        };
+      })
+      .sort(
+        (first, second) =>
+          second.volume - first.volume || second.severity - first.severity,
+      );
+  }, [risks]);
 
   const riskDistribution = useMemo(() => {
     const levels = ["Baixo", "Medio", "Alto", "Critico"];
@@ -195,6 +234,46 @@ export function RiskCenter() {
       </section>
 
       <KPIGrid isLoading={isLoading} metrics={metrics} />
+
+      <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+        <p className="text-sm font-medium text-zinc-500">
+          Qual vetor gera mais risco?
+        </p>
+        <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">
+          Principais Vetores de Risco
+        </h2>
+        <div className="mt-5 grid gap-3 md:grid-cols-4">
+          {riskVectors.map((vector, index) => (
+            <article
+              className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+              key={vector.label}
+            >
+              <p className="text-xs font-medium text-zinc-500">
+                {index + 1}. {vector.label}
+              </p>
+              <p className="mt-3 text-2xl font-semibold text-zinc-950">
+                {vector.volume}
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                contas abaixo de 70 no vetor
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
+                  Severidade {vector.severity}
+                </span>
+                <span
+                  className={cn(
+                    "rounded-md px-2 py-1 text-xs font-medium",
+                    riskColor(vector.impact),
+                  )}
+                >
+                  Impacto {vector.impact}
+                </span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
         <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">

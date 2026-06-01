@@ -6,6 +6,9 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type {
   ExecutiveAccountRow,
   ExecutiveAccountsResponse,
+  FeedbackRow,
+  FeedbacksResponse,
+  GrowthRecommendationRow,
   GrowthResponse,
   OnboardingsResponse,
   RiskRow,
@@ -86,8 +89,98 @@ const emptyGrowth: GrowthResponse = {
   source: "not-configured",
 };
 
+type TrendSignal = {
+  description: string;
+  direction: "↑" | "↓" | "→";
+  impact: "Baixo" | "Médio" | "Alto";
+  justification: string;
+};
+
+type InitiativeImpact = {
+  initiative: string;
+  expectedImpact: string;
+  priority: string;
+  justification: string;
+};
+
+const buildTrendSignals = (
+  risks: RiskRow[],
+  onboardings: OnboardingsResponse["onboardings"],
+  feedbacks: FeedbackRow[],
+): TrendSignal[] => {
+  const onboardingRiskCount =
+    risks.filter((risk) => risk.onboardingScore < 70).length +
+    onboardings.filter((onboarding) => normalize(onboarding.risk).includes("alto")).length;
+  const negativePermissionFeedbacks = feedbacks.filter((feedback) => {
+    const text = normalize(
+      `${feedback.sentiment} ${feedback.priority} ${feedback.category} ${feedback.theme} ${feedback.summary}`,
+    );
+
+    return (
+      text.includes("negativo") &&
+      (text.includes("permiss") || text.includes("acesso"))
+    );
+  }).length;
+  const averageHealth = average(risks.map((risk) => risk.healthScore));
+
+  return [
+    {
+      description: "Risco concentrado em onboarding",
+      direction: onboardingRiskCount > 0 ? "↑" : "→",
+      impact: onboardingRiskCount >= 2 ? "Alto" : onboardingRiskCount === 1 ? "Médio" : "Baixo",
+      justification:
+        onboardingRiskCount > 0
+          ? `${onboardingRiskCount} sinal(is) conectam risco atual a onboarding.`
+          : "Não há concentração relevante em onboarding no recorte atual.",
+    },
+    {
+      description: "Feedback negativo em permissões",
+      direction: negativePermissionFeedbacks > 0 ? "↑" : "→",
+      impact: negativePermissionFeedbacks >= 2 ? "Alto" : negativePermissionFeedbacks === 1 ? "Médio" : "Baixo",
+      justification:
+        negativePermissionFeedbacks > 0
+          ? `${negativePermissionFeedbacks} feedback(s) conectam sentimento negativo a permissões ou acessos.`
+          : "Sem recorrência negativa relevante em permissões nas fontes atuais.",
+    },
+    {
+      description: "Health Score estável",
+      direction: "→",
+      impact: averageHealth >= 70 ? "Baixo" : averageHealth >= 50 ? "Médio" : "Alto",
+      justification: `Média atual de Health Score em ${averageHealth}, sem histórico temporal suficiente para afirmar evolução real.`,
+    },
+  ];
+};
+
+const buildInitiativeImpacts = (
+  recommendations: GrowthRecommendationRow[],
+  highRiskAccounts: RiskRow[],
+): InitiativeImpact[] => {
+  const recommendationInitiatives = [...recommendations]
+    .sort((first, second) => second.opportunityScore - first.opportunityScore)
+    .slice(0, 3)
+    .map((recommendation) => ({
+      expectedImpact: recommendation.estimatedImpact,
+      initiative: recommendation.recommendation,
+      justification: `Priorizada em ${recommendation.area} com Opportunity Score ${recommendation.opportunityScore}.`,
+      priority: recommendation.priority,
+    }));
+
+  if (recommendationInitiatives.length > 0) {
+    return recommendationInitiatives;
+  }
+
+  return highRiskAccounts.slice(0, 3).map((risk) => ({
+    expectedImpact:
+      "reduz fricção operacional, aumenta adoção e reduz exposição de risco.",
+    initiative: risk.suggestedAction || `Atuar sobre ${risk.accountName}`,
+    justification: `${risk.accountName} está em ${risk.riskLevel} por ${risk.mainReason}.`,
+    priority: risk.riskLevel,
+  }));
+};
+
 export function ExecutiveCenter() {
   const [accounts, setAccounts] = useState<ExecutiveAccountRow[]>([]);
+  const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([]);
   const [risks, setRisks] = useState<RiskRow[]>([]);
   const [onboardings, setOnboardings] = useState<OnboardingsResponse["onboardings"]>([]);
   const [growth, setGrowth] = useState<GrowthResponse>(emptyGrowth);
@@ -100,11 +193,13 @@ export function ExecutiveCenter() {
       try {
         const [
           accountsResponse,
+          feedbacksResponse,
           risksResponse,
           onboardingsResponse,
           growthResponse,
         ] = await Promise.all([
           fetch("/api/accounts"),
+          fetch("/api/feedbacks"),
           fetch("/api/risks"),
           fetch("/api/onboardings"),
           fetch("/api/growth"),
@@ -112,12 +207,14 @@ export function ExecutiveCenter() {
 
         const accountsData =
           (await accountsResponse.json()) as ExecutiveAccountsResponse;
+        const feedbacksData = (await feedbacksResponse.json()) as FeedbacksResponse;
         const risksData = (await risksResponse.json()) as RisksResponse;
         const onboardingsData =
           (await onboardingsResponse.json()) as OnboardingsResponse;
         const growthData = (await growthResponse.json()) as GrowthResponse;
 
         setAccounts(accountsData.accounts);
+        setFeedbacks(feedbacksData.feedbacks);
         setRisks(risksData.risks);
         setOnboardings(onboardingsData.onboardings);
         setGrowth(growthData);
@@ -192,41 +289,27 @@ export function ExecutiveCenter() {
     ]).slice(0, 4);
   }, [growth.recommendations, highRiskAccounts, onboardings]);
 
-  const topOpportunity = useMemo(
+  const topOpportunities = useMemo(
     () =>
-      [...risks].sort(
-        (first, second) =>
-          opportunityScore(second.healthScore, second.riskScore) -
-          opportunityScore(first.healthScore, first.riskScore),
-      )[0],
+      [...risks]
+        .sort(
+          (first, second) =>
+            opportunityScore(second.healthScore, second.riskScore) -
+            opportunityScore(first.healthScore, first.riskScore),
+        )
+        .slice(0, 3),
     [risks],
   );
 
-  const primaryRecommendation = useMemo(
-    () =>
-      [...growth.recommendations].sort(
-        (first, second) => second.opportunityScore - first.opportunityScore,
-      )[0],
-    [growth.recommendations],
+  const trendSignals = useMemo(
+    () => buildTrendSignals(risks, onboardings, feedbacks),
+    [feedbacks, onboardings, risks],
   );
 
-  const trendSignal = useMemo(() => {
-    const critical = risks.filter((risk) =>
-      normalize(risk.riskLevel).includes("critico"),
-    ).length;
-    const high = risks.filter((risk) =>
-      normalize(risk.riskLevel).includes("alto"),
-    ).length;
-
-    return {
-      critical,
-      high,
-      label:
-        critical > 0
-          ? "Pressão concentrada em risco crítico"
-          : "Pressão concentrada em risco alto",
-    };
-  }, [risks]);
+  const initiativeImpacts = useMemo(
+    () => buildInitiativeImpacts(growth.recommendations, highRiskAccounts),
+    [growth.recommendations, highRiskAccounts],
+  );
 
   const noActionConsequence = priorityAccount
     ? `Sem ação, ${priorityAccount.accountName} tende a manter ${priorityAccount.riskLevel.toLowerCase()} com risco ${priorityAccount.riskScore}, prolongando ${priorityAccount.mainReason.toLowerCase()}.`
@@ -293,17 +376,14 @@ export function ExecutiveCenter() {
 
         <QuestionBlock
           eyebrow="2. O que mudou?"
-          title="Sinal de tendência"
+          title="Tendências identificadas"
         >
-          <p className="text-sm leading-6 text-zinc-600">
-            {trendSignal.label}. Esta leitura usa o recorte atual das fontes e
-            deve ser interpretada como variação simulada para demonstração, não
-            como histórico real.
+          <TrendList trends={trendSignals} />
+          <p className="mt-4 text-xs leading-5 text-zinc-500">
+            Leitura baseada no recorte atual das fontes. Onde não há histórico
+            temporal suficiente, a variação é tratada como sinal de tendência
+            para demonstração.
           </p>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <MiniMetric label="Crítico" value={trendSignal.critical} />
-            <MiniMetric label="Alto" value={trendSignal.high} />
-          </div>
         </QuestionBlock>
       </section>
 
@@ -316,30 +396,35 @@ export function ExecutiveCenter() {
         </QuestionBlock>
 
         <QuestionBlock
-          eyebrow="4. Qual oportunidade gera mais valor?"
-          title={topOpportunity?.accountName ?? "Sem oportunidade consolidada"}
+          eyebrow="4. Quem possui maior potencial de expansão?"
+          title="Top Oportunidades de Expansão"
         >
-          {topOpportunity ? (
-            <div className="space-y-3 text-sm leading-6 text-zinc-600">
-              <div className="flex flex-wrap gap-2">
-                <Badge>
-                  Opportunity Score{" "}
-                  {opportunityScore(
-                    topOpportunity.healthScore,
-                    topOpportunity.riskScore,
-                  )}
-                </Badge>
-                <Badge>Health Score {topOpportunity.healthScore}</Badge>
-                <Badge>Risk Score {topOpportunity.riskScore}</Badge>
-              </div>
-              <p>
-                <strong className="text-zinc-950">Motivo:</strong>{" "}
-                {topOpportunity.mainReason}
-              </p>
-              <p>
-                <strong className="text-zinc-950">Ação sugerida:</strong>{" "}
-                {topOpportunity.suggestedAction}
-              </p>
+          {topOpportunities.length > 0 ? (
+            <div className="space-y-3">
+              {topOpportunities.map((opportunity) => (
+                <div
+                  className="border-t border-zinc-100 pt-3 first:border-t-0 first:pt-0"
+                  key={opportunity.accountId}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-zinc-950">
+                      {opportunity.accountName}
+                    </p>
+                    <Badge>
+                      Opportunity Score{" "}
+                      {opportunityScore(
+                        opportunity.healthScore,
+                        opportunity.riskScore,
+                      )}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-zinc-600">
+                    Motivo: Health alto combinado ao risco atual. Próxima ação:{" "}
+                    {opportunity.suggestedAction ||
+                      "avaliar expansão comercial com base no contexto da conta."}
+                  </p>
+                </div>
+              ))}
             </div>
           ) : (
             <EmptyState />
@@ -364,13 +449,9 @@ export function ExecutiveCenter() {
 
       <QuestionBlock
         eyebrow="Decision Intelligence"
-        title="Impacto esperado"
+        title="Impacto esperado das iniciativas"
       >
-        <p className="text-sm leading-6 text-zinc-600">
-          {primaryRecommendation
-            ? `${primaryRecommendation.recommendation} pode gerar ${primaryRecommendation.estimatedImpact.toLowerCase()} e deve ser tratado como prioridade ${primaryRecommendation.priority.toLowerCase()}.`
-            : "Sem recomendação estratégica suficiente para estimar impacto nas fontes atuais."}
-        </p>
+        <InitiativeImpactList initiatives={initiativeImpacts} />
       </QuestionBlock>
 
       <IntelligentSummary
@@ -425,15 +506,6 @@ function List({ empty, items }: { empty: string; items: string[] }) {
   );
 }
 
-function MiniMetric({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
-      <p className="text-xs text-zinc-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-zinc-950">{value}</p>
-    </div>
-  );
-}
-
 function QuestionBlock({
   children,
   eyebrow,
@@ -451,5 +523,65 @@ function QuestionBlock({
       </h2>
       <div className="mt-4">{children}</div>
     </section>
+  );
+}
+
+function TrendList({ trends }: { trends: TrendSignal[] }) {
+  return (
+    <div className="space-y-3">
+      {trends.map((trend) => (
+        <div
+          className="border-t border-zinc-100 pt-3 first:border-t-0 first:pt-0"
+          key={trend.description}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-lg font-semibold text-zinc-950">
+              {trend.direction}
+            </span>
+            <p className="text-sm font-semibold text-zinc-950">
+              {trend.description}
+            </p>
+            <Badge>Impacto {trend.impact}</Badge>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-zinc-600">
+            {trend.justification}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function InitiativeImpactList({
+  initiatives,
+}: {
+  initiatives: InitiativeImpact[];
+}) {
+  if (initiatives.length === 0) {
+    return <EmptyState />;
+  }
+
+  return (
+    <div className="grid gap-3 md:grid-cols-3">
+      {initiatives.map((initiative) => (
+        <article
+          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+          key={initiative.initiative}
+        >
+          <p className="text-sm font-semibold text-zinc-950">
+            {initiative.initiative}
+          </p>
+          <p className="mt-3 text-sm leading-6 text-zinc-600">
+            Impacto esperado: {initiative.expectedImpact}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-zinc-600">
+            Justificativa: {initiative.justification}
+          </p>
+          <div className="mt-3">
+            <Badge>Prioridade {initiative.priority}</Badge>
+          </div>
+        </article>
+      ))}
+    </div>
   );
 }

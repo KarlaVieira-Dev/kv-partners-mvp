@@ -53,11 +53,14 @@ type ExecutiveBriefing = {
 const quickQuestions = [
   "Onde estamos abaixo do mercado?",
   "Quais contas precisam de atenção?",
+  "Quais contas possuem maior potencial de expansão?",
+  "Quem deveria receber uma oferta de upgrade?",
   "O que os concorrentes estão fazendo?",
   "Quais tendências merecem investimento?",
   "Onde devemos investir nos próximos 90 dias?",
   "Qual funcionalidade possui maior oportunidade?",
   "Qual iniciativa gera maior impacto?",
+  "Qual iniciativa devo priorizar nos próximos 90 dias?",
 ];
 
 const emptyGrowth: GrowthResponse = {
@@ -108,6 +111,9 @@ const isBelowMarket = (benchmark: GrowthBenchmarkRow) =>
 const recommendationScore = (recommendation: GrowthRecommendationRow) =>
   recommendation.opportunityScore +
   (isHighPriority(recommendation.priority) ? 20 : 0);
+
+const accountOpportunityScore = (risk: RiskRow) =>
+  Math.round(risk.healthScore - risk.riskScore * 0.5);
 
 const trendScore = (trend: GrowthMarketTrendRow) =>
   (isHighPriority(trend.priority) ? 2 : 0) +
@@ -224,6 +230,52 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
   }
 
   if (
+    normalizedQuestion.includes("potencial de expansao") ||
+    normalizedQuestion.includes("potencial de expansão")
+  ) {
+    const opportunities = topBy(data.risks, accountOpportunityScore, 5);
+
+    return {
+      accounts: opportunities.map((risk) => risk.accountName),
+      data: opportunities.map(
+        (risk, index) =>
+          `${index + 1}. ${risk.accountName}: Opportunity Score ${accountOpportunityScore(risk)}, Health ${risk.healthScore}, Risk ${risk.riskScore}.`,
+      ),
+      recommendations: opportunities.map(
+        (risk) =>
+          `Justificativa: health alto com risco relativo controlado. Ação recomendada: ${risk.suggestedAction || "avaliar expansão comercial."}`,
+      ),
+      summary:
+        opportunities.length > 0
+          ? `${opportunities[0].accountName} lidera o ranking de expansão pelo maior Opportunity Score derivado de Health Score e Risk Score.`
+          : "Nenhuma conta com potencial de expansão foi encontrada nos dados atuais.",
+    };
+  }
+
+  if (normalizedQuestion.includes("upgrade")) {
+    const candidates = topBy(data.risks, accountOpportunityScore, 5);
+
+    return {
+      accounts: candidates.map((risk) => risk.accountName),
+      data: candidates.map((risk, index) => {
+        const account = data.accounts.find(
+          (row) => row.account === risk.accountName,
+        );
+
+        return `${index + 1}. ${risk.accountName}: plano ${account?.plan || "não informado"}, Opportunity Score ${accountOpportunityScore(risk)}.`;
+      }),
+      recommendations: candidates.map(
+        (risk) =>
+          `Oferta sugerida: avaliar upgrade para ${risk.accountName}. Justificativa: Health ${risk.healthScore}, Risk ${risk.riskScore} e contexto ${risk.mainReason.toLowerCase()}.`,
+      ),
+      summary:
+        candidates.length > 0
+          ? `${candidates[0].accountName} deve ser avaliada primeiro para oferta de upgrade, respeitando o contexto de risco do IOI.`
+          : "Nenhum candidato a upgrade foi identificado nos dados atuais.",
+    };
+  }
+
+  if (
     normalizedQuestion.includes("contas precisam") ||
     normalizedQuestion.includes("atenção") ||
     normalizedQuestion.includes("atencao") ||
@@ -261,6 +313,37 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
 
   if (
     normalizedQuestion.includes("iniciativa") &&
+    (normalizedQuestion.includes("priorizar") ||
+      normalizedQuestion.includes("90 dias"))
+  ) {
+    const initiatives = topBy(
+      data.growth.recommendations,
+      recommendationScore,
+      5,
+    );
+
+    return {
+      accounts: data.growth.insights
+        .map((insight) => insight.accountName)
+        .filter(Boolean)
+        .slice(0, 5),
+      data: initiatives.map(
+        (initiative, index) =>
+          `${index + 1}. ${initiative.recommendation}: prioridade ${initiative.priority}; impacto esperado ${initiative.estimatedImpact}.`,
+      ),
+      recommendations: initiatives.map(
+        (initiative) =>
+          `Motivo: iniciativa em ${initiative.area} com Opportunity Score ${initiative.opportunityScore}. Próximo passo: transformar em prioridade dos próximos 90 dias.`,
+      ),
+      summary:
+        initiatives.length > 0
+          ? `A iniciativa a priorizar nos próximos 90 dias é ${initiatives[0].recommendation}, pelo maior equilíbrio entre impacto, prioridade e oportunidade.`
+          : "Nenhuma iniciativa priorizável foi encontrada nas recomendações atuais.",
+    };
+  }
+
+  if (
+    normalizedQuestion.includes("iniciativa") &&
     normalizedQuestion.includes("maior impacto")
   ) {
     const initiatives = topBy(
@@ -273,7 +356,7 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
       accounts: [],
       data: initiatives.map(
         (initiative, index) =>
-          `${index + 1}. ${initiative.recommendation}: impacto esperado ${initiative.estimatedImpact}; prioridade ${initiative.priority}.`,
+          `${index + 1}. ${initiative.recommendation}: motivo ${initiative.area}; impacto esperado ${initiative.estimatedImpact}; prioridade ${initiative.priority}.`,
       ),
       recommendations: initiatives.map(
         (initiative) =>

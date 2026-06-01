@@ -78,6 +78,22 @@ type OpportunityRadarRow = {
   value: number;
 };
 
+type ExpansionCandidate = {
+  accountName: string;
+  action: string;
+  category: string;
+  reason: string;
+  score: number;
+};
+
+type InitiativeRankingRow = {
+  area: string;
+  expectedImpact: string;
+  id: string;
+  initiative: string;
+  priority: string;
+};
+
 export function GrowthCenter() {
   const [growth, setGrowth] = useState<GrowthResponse>(emptyGrowth);
   const [risks, setRisks] = useState<RiskRow[]>([]);
@@ -289,6 +305,30 @@ export function GrowthCenter() {
     [risks],
   );
 
+  const expansionCandidates = useMemo(
+    () => buildExpansionCandidates(risks),
+    [risks],
+  );
+
+  const initiativeRanking = useMemo<InitiativeRankingRow[]>(
+    () =>
+      [...growth.recommendations]
+        .sort(
+          (first, second) =>
+            second.opportunityScore - first.opportunityScore ||
+            Number(isHighPriority(second.priority)) -
+              Number(isHighPriority(first.priority)),
+        )
+        .map((recommendation) => ({
+          area: recommendation.area,
+          expectedImpact: recommendation.estimatedImpact,
+          id: recommendation.id,
+          initiative: recommendation.recommendation,
+          priority: recommendation.priority,
+        })),
+    [growth.recommendations],
+  );
+
   const opportunityRadarRows = useMemo<OpportunityRadarRow[]>(
     () => [
       {
@@ -409,6 +449,63 @@ export function GrowthCenter() {
           ))}
         </div>
       </section>
+
+      <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+        <div>
+          <p className="text-sm font-medium text-zinc-500">
+            Expansion Intelligence
+          </p>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">
+            Expansion Candidates
+          </h2>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {expansionCandidates.map((candidate) => (
+            <article
+              className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+              key={`${candidate.category}-${candidate.accountName}`}
+            >
+              <p className="text-xs font-medium text-zinc-500">
+                {candidate.category}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-zinc-950">
+                {candidate.accountName}
+              </p>
+              <p className="mt-3 text-2xl font-semibold tracking-tight text-zinc-950">
+                {candidate.score}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-zinc-500">
+                {candidate.reason}
+              </p>
+              <p className="mt-3 text-xs font-medium text-zinc-700">
+                {candidate.action}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <DataTable
+        columns={[
+          {
+            className: "max-w-[360px] font-medium text-zinc-950",
+            header: "Iniciativa",
+            render: (row) => row.initiative,
+          },
+          { header: "Impacto esperado", render: (row) => row.expectedImpact },
+          {
+            header: "Prioridade",
+            render: (row) => <Badge value={row.priority} />,
+          },
+          { header: "Área responsável", render: (row) => row.area },
+        ]}
+        emptyMessage="Nenhuma iniciativa encontrada nas recomendações atuais."
+        getRowKey={(row) => row.id}
+        isLoading={isLoading}
+        minWidth="920px"
+        rows={initiativeRanking.slice(0, 10)}
+        title="Ranking de Iniciativas"
+      />
 
       <FilterBar>
         <FilterLabel text="Filtros estratégicos" />
@@ -810,6 +907,50 @@ function buildSummaryItems(growth: GrowthResponse) {
       ? "Time To Value está acima do benchmark e merece atenção."
       : "Time To Value não apresenta alerta acima do benchmark nos dados atuais.",
   ];
+}
+
+function buildExpansionCandidates(risks: RiskRow[]): ExpansionCandidate[] {
+  const ranked = [...risks].sort(
+    (first, second) =>
+      opportunityScore(second.healthScore, second.riskScore) -
+      opportunityScore(first.healthScore, first.riskScore),
+  );
+  const categories = [
+    {
+      action: "Avaliar upgrade comercial com base no contexto da conta.",
+      category: "Upgrade de Plano",
+      reason: "Health alto e risco controlado indicam espaço para avanço de plano.",
+    },
+    {
+      action: "Mapear necessidade adjacente e propor oferta complementar.",
+      category: "Cross-sell",
+      reason: "Boa saúde operacional permite ampliar valor sem elevar fricção.",
+    },
+    {
+      action: "Avaliar expansão de usuários em áreas com adoção positiva.",
+      category: "Expansão de Usuários",
+      reason: "Conta com base saudável pode sustentar maior penetração interna.",
+    },
+    {
+      action: "Conectar recomendação estratégica a novos módulos ou jornadas.",
+      category: "Expansão de Módulos",
+      reason: "Contexto da conta sugere ampliar escopo com baixo risco relativo.",
+    },
+  ];
+
+  return categories.map((category, index) => {
+    const risk = ranked[index % Math.max(ranked.length, 1)];
+
+    return {
+      accountName: risk?.accountName ?? "Sem conta consolidada",
+      action: risk?.suggestedAction || category.action,
+      category: category.category,
+      reason: risk
+        ? `${category.reason} Health ${risk.healthScore}, Risk ${risk.riskScore}.`
+        : "Sem dados suficientes de risco para classificar candidato.",
+      score: risk ? opportunityScore(risk.healthScore, risk.riskScore) : 0,
+    };
+  });
 }
 
 function topLabels<T>(
