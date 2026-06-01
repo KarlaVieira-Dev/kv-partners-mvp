@@ -51,13 +51,16 @@ type ExecutiveBriefing = {
 };
 
 const quickQuestions = [
+  "Qual decisão devo tomar agora?",
   "Onde estamos abaixo do mercado?",
   "Quais contas precisam de atenção?",
   "Quais contas possuem maior potencial de expansão?",
   "Quem deveria receber uma oferta de upgrade?",
+  "O que vender para cada conta prioritária?",
   "O que os concorrentes estão fazendo?",
   "Quais tendências merecem investimento?",
   "Onde devemos investir nos próximos 90 dias?",
+  "O que devo priorizar nos próximos 90 dias?",
   "Qual funcionalidade possui maior oportunidade?",
   "Qual iniciativa gera maior impacto?",
   "Qual iniciativa devo priorizar nos próximos 90 dias?",
@@ -119,6 +122,36 @@ const trendScore = (trend: GrowthMarketTrendRow) =>
   (isHighPriority(trend.priority) ? 2 : 0) +
   (isHighPriority(trend.impact) ? 2 : 0);
 
+const recommendedOffer = (
+  risk: RiskRow,
+  accounts: ExecutiveAccountRow[],
+) => {
+  const account = accounts.find((row) => row.account === risk.accountName);
+  const plan = normalize(account?.plan ?? "");
+  const type = normalize(account?.type ?? risk.accountType);
+  const score = accountOpportunityScore(risk);
+  const isEnterprise =
+    plan.includes("enterprise") ||
+    plan.includes("premium") ||
+    type.includes("enterprise");
+  const hasLowRisk = risk.riskScore < 35;
+  const hasHighHealth = risk.healthScore >= 75;
+
+  return {
+    expectedImpact: score >= 60 ? "Alto" : "Médio",
+    nextAction: isEnterprise
+      ? "abordagem consultiva com foco em governança e módulos avançados"
+      : "abordagem comercial consultiva para validar escopo de expansão",
+    offer: isEnterprise
+      ? "Governança Avançada"
+      : hasHighHealth && hasLowRisk
+        ? "Expansão de Usuários"
+        : "Upgrade de Plano",
+    probability: hasHighHealth && hasLowRisk ? "Alta" : "Média",
+    score,
+  };
+};
+
 function buildExecutiveBriefing(data: CopilotData): ExecutiveBriefing {
   const belowBenchmark = data.growth.benchmarks.filter(isBelowMarket);
   const priorityRecommendation = topBy(
@@ -155,6 +188,37 @@ function buildExecutiveBriefing(data: CopilotData): ExecutiveBriefing {
 
 function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
   const normalizedQuestion = normalize(question);
+
+  if (
+    normalizedQuestion.includes("decisao devo tomar agora") ||
+    normalizedQuestion.includes("decisão devo tomar agora") ||
+    normalizedQuestion.includes("decisao tomar agora") ||
+    normalizedQuestion.includes("decisão tomar agora")
+  ) {
+    const priorityAccount = topBy(data.risks, (risk) => risk.riskScore, 1)[0];
+
+    return {
+      accounts: priorityAccount ? [priorityAccount.accountName] : [],
+      data: priorityAccount
+        ? [
+            `Ação: mitigar ${priorityAccount.accountName}.`,
+            `Índice de Risco ${priorityAccount.riskScore}, nível ${priorityAccount.riskLevel}.`,
+            `Motivo: ${priorityAccount.mainReason}.`,
+            `Prazo sugerido: ${normalize(priorityAccount.riskLevel).includes("critico") ? "7 dias" : "14 dias"}.`,
+            "Fonte: 07_IOI_Scores.",
+          ]
+        : [],
+      recommendations: priorityAccount
+        ? [
+            `Executar primeiro: ${priorityAccount.suggestedAction}`,
+            "Impacto esperado: retenção e adoção.",
+          ]
+        : [],
+      summary: priorityAccount
+        ? `Decisão recomendada agora: mitigar ${priorityAccount.accountName}, a conta com maior risco consolidado do ecossistema.`
+        : "Não há dados de risco suficientes para recomendar uma decisão agora.",
+    };
+  }
 
   if (
     normalizedQuestion.includes("abaixo do mercado") ||
@@ -276,6 +340,33 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
   }
 
   if (
+    normalizedQuestion.includes("o que vender") ||
+    normalizedQuestion.includes("oferta") ||
+    normalizedQuestion.includes("conta prioritaria") ||
+    normalizedQuestion.includes("conta prioritária")
+  ) {
+    const candidates = topBy(data.risks, accountOpportunityScore, 3);
+
+    return {
+      accounts: candidates.map((risk) => risk.accountName),
+      data: candidates.map((risk, index) => {
+        const offer = recommendedOffer(risk, data.accounts);
+
+        return `${index + 1}. ${risk.accountName}: vender ${offer.offer}; Potencial de Expansão ${offer.score}; probabilidade ${offer.probability}; impacto ${offer.expectedImpact}.`;
+      }),
+      recommendations: candidates.map((risk) => {
+        const offer = recommendedOffer(risk, data.accounts);
+
+        return `${risk.accountName}: próxima ação comercial - ${offer.nextAction}.`;
+      }),
+      summary:
+        candidates.length > 0
+          ? `Oferta recomendada: começar por ${candidates[0].accountName} com ${recommendedOffer(candidates[0], data.accounts).offer}.`
+          : "Nenhuma oferta recomendada foi identificada com os dados atuais.",
+    };
+  }
+
+  if (
     normalizedQuestion.includes("contas precisam") ||
     normalizedQuestion.includes("atenção") ||
     normalizedQuestion.includes("atencao") ||
@@ -312,8 +403,10 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
   }
 
   if (
-    normalizedQuestion.includes("iniciativa") &&
-    (normalizedQuestion.includes("priorizar") ||
+    (normalizedQuestion.includes("iniciativa") &&
+      (normalizedQuestion.includes("priorizar") ||
+        normalizedQuestion.includes("90 dias"))) ||
+    (normalizedQuestion.includes("priorizar") &&
       normalizedQuestion.includes("90 dias"))
   ) {
     const initiatives = topBy(

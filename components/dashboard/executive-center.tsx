@@ -127,6 +127,28 @@ type ImpactSemaphore = {
   status: TrafficStatus;
 };
 
+type RecommendedDecision = {
+  action: string;
+  impact: string;
+  mainReason: string;
+  riskLevel: string;
+  riskScore: number;
+  source: string;
+  suggestedAction: string;
+  suggestedDeadline: string;
+  urgency: TrafficStatus;
+};
+
+type InitiativeRanking = {
+  area: string;
+  expectedImpact: string;
+  initiative: string;
+  justification: string;
+  position: number;
+  priority: string;
+  score: number;
+};
+
 const buildTrendSignals = (
   risks: RiskRow[],
   onboardings: OnboardingsResponse["onboardings"],
@@ -374,6 +396,89 @@ const buildImpactSemaphores = (
   ];
 };
 
+const buildRecommendedDecision = (
+  priorityAccount: RiskRow | undefined,
+): RecommendedDecision | undefined => {
+  if (!priorityAccount) {
+    return undefined;
+  }
+
+  const isCritical = normalize(priorityAccount.riskLevel).includes("critico");
+
+  return {
+    action: `Mitigar ${priorityAccount.accountName}`,
+    impact: "Retenção e adoção",
+    mainReason: priorityAccount.mainReason,
+    riskLevel: priorityAccount.riskLevel,
+    riskScore: priorityAccount.riskScore,
+    source: "07_IOI_Scores",
+    suggestedAction: priorityAccount.suggestedAction,
+    suggestedDeadline: isCritical ? "7 dias" : "14 dias",
+    urgency: isCritical ? "Vermelho" : "Amarelo",
+  };
+};
+
+const buildInitiativeRanking = (
+  recommendations: GrowthRecommendationRow[],
+  risks: RiskRow[],
+  onboardings: OnboardingsResponse["onboardings"],
+  feedbacks: FeedbackRow[],
+): InitiativeRanking[] => {
+  const highRiskCount = risks.filter(isHighOrCriticalRisk).length;
+  const onboardingSignals =
+    risks.filter((risk) => risk.onboardingScore < 70).length +
+    onboardings.filter((onboarding) => normalize(onboarding.risk).includes("alto")).length;
+  const feedbackSignals = feedbacks.filter((feedback) => {
+    const text = normalize(
+      `${feedback.sentiment} ${feedback.priority} ${feedback.theme} ${feedback.summary}`,
+    );
+
+    return text.includes("negativo") || text.includes("crit") || text.includes("alta");
+  }).length;
+
+  return [...recommendations]
+    .map((recommendation) => {
+      const text = normalize(`${recommendation.recommendation} ${recommendation.area}`);
+      const riskBonus = highRiskCount * 4;
+      const onboardingBonus = text.includes("onboarding") ? onboardingSignals * 5 : 0;
+      const feedbackBonus =
+        text.includes("permiss") || text.includes("acesso") || text.includes("feedback")
+          ? feedbackSignals * 4
+          : 0;
+      const priorityBonus = isPriority(recommendation.priority) ? 10 : 0;
+      const score = Math.min(
+        100,
+        Math.round(
+          recommendation.opportunityScore * 0.55 +
+            riskBonus +
+            onboardingBonus +
+            feedbackBonus +
+            priorityBonus,
+        ),
+      );
+
+      return {
+        area: recommendation.area,
+        expectedImpact: recommendation.estimatedImpact,
+        initiative: recommendation.recommendation,
+        justification:
+          onboardingBonus > 0
+            ? "Conecta risco, onboarding e sinais operacionais."
+            : feedbackBonus > 0
+              ? "Reduz fricção operacional ligada a feedbacks e acessos."
+              : "Conecta recomendações estratégicas, risco e potencial de expansão.",
+        priority: recommendation.priority,
+        score,
+      };
+    })
+    .sort((first, second) => second.score - first.score)
+    .slice(0, 3)
+    .map((initiative, index) => ({
+      ...initiative,
+      position: index + 1,
+    }));
+};
+
 export function ExecutiveCenter() {
   const [accounts, setAccounts] = useState<ExecutiveAccountRow[]>([]);
   const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([]);
@@ -524,6 +629,16 @@ export function ExecutiveCenter() {
     [feedbacks, onboardings, risks],
   );
 
+  const recommendedDecision = useMemo(
+    () => buildRecommendedDecision(priorityAccount),
+    [priorityAccount],
+  );
+
+  const initiativeRanking = useMemo(
+    () => buildInitiativeRanking(growth.recommendations, risks, onboardings, feedbacks),
+    [feedbacks, growth.recommendations, onboardings, risks],
+  );
+
   const noActionConsequence = priorityAccount
     ? `Sem ação, ${priorityAccount.accountName} tende a manter ${priorityAccount.riskLevel.toLowerCase()} com risco ${priorityAccount.riskScore}, prolongando ${priorityAccount.mainReason.toLowerCase()}.`
     : "Sem dados de risco suficientes para projetar consequência.";
@@ -555,6 +670,13 @@ export function ExecutiveCenter() {
 
       <QuestionBlock eyebrow="Cockpit executivo" title="Pulso Executivo">
         <ExecutivePulseGrid items={executivePulse} />
+      </QuestionBlock>
+
+      <QuestionBlock
+        eyebrow="Se eu só puder fazer uma coisa hoje, qual é?"
+        title="Decisão Recomendada Agora"
+      >
+        <RecommendedDecisionCard decision={recommendedDecision} />
       </QuestionBlock>
 
       <QuestionBlock eyebrow="Prioridade do dia" title="O que fazer hoje">
@@ -675,6 +797,9 @@ export function ExecutiveCenter() {
         <ImpactSemaphoreGrid items={impactSemaphores} />
         <div className="mt-4">
           <InitiativeImpactList initiatives={initiativeImpacts} />
+        </div>
+        <div className="mt-4">
+          <InitiativeRankingList initiatives={initiativeRanking} />
         </div>
       </QuestionBlock>
 
@@ -839,6 +964,63 @@ function TodayActionGrid({ actions }: { actions: TodayAction[] }) {
   );
 }
 
+function RecommendedDecisionCard({
+  decision,
+}: {
+  decision: RecommendedDecision | undefined;
+}) {
+  if (!decision) {
+    return <EmptyState />;
+  }
+
+  return (
+    <article className="rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusPill status={decision.urgency} />
+            <Badge>Fonte: {decision.source}</Badge>
+          </div>
+          <h3 className="mt-4 text-xl font-semibold tracking-tight text-zinc-950">
+            {decision.action}
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-zinc-600">
+            {decision.suggestedAction}
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[520px]">
+          <MiniDecisionMetric label="Índice de Risco" value={decision.riskScore} />
+          <MiniDecisionMetric label="Nível de Risco" value={decision.riskLevel} />
+          <MiniDecisionMetric label="Impacto" value={decision.impact} />
+          <MiniDecisionMetric
+            label="Prazo sugerido"
+            value={decision.suggestedDeadline}
+          />
+        </div>
+      </div>
+      <p className="mt-4 text-sm leading-6 text-zinc-600">
+        <strong className="text-zinc-950">Motivo:</strong>{" "}
+        {decision.mainReason}
+      </p>
+    </article>
+  );
+}
+
+function MiniDecisionMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) {
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-white p-3">
+      <p className="text-xs text-zinc-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-zinc-950">{value}</p>
+    </div>
+  );
+}
+
 function ImpactSemaphoreGrid({ items }: { items: ImpactSemaphore[] }) {
   return (
     <div className="grid gap-3 md:grid-cols-4">
@@ -861,6 +1043,57 @@ function ImpactSemaphoreGrid({ items }: { items: ImpactSemaphore[] }) {
         </article>
       ))}
     </div>
+  );
+}
+
+function InitiativeRankingList({
+  initiatives,
+}: {
+  initiatives: InitiativeRanking[];
+}) {
+  if (initiatives.length === 0) {
+    return <EmptyState />;
+  }
+
+  return (
+    <section className="rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+      <p className="text-sm font-medium text-zinc-500">
+        O que priorizar nos próximos 90 dias?
+      </p>
+      <h3 className="mt-2 text-lg font-semibold tracking-tight text-zinc-950">
+        Ranking de Iniciativas
+      </h3>
+      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+        {initiatives.map((initiative) => (
+          <article
+            className="rounded-lg border border-zinc-200 bg-white p-4"
+            key={initiative.initiative}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-2xl font-semibold text-zinc-950">
+                {initiative.position}º
+              </span>
+              <Badge>Pontuação {initiative.score}</Badge>
+            </div>
+            <p className="mt-4 text-sm font-semibold text-zinc-950">
+              {initiative.initiative}
+            </p>
+            <p className="mt-3 text-sm leading-6 text-zinc-600">
+              Impacto esperado: {initiative.expectedImpact}
+            </p>
+            <p className="text-sm leading-6 text-zinc-600">
+              Prioridade: {initiative.priority}
+            </p>
+            <p className="text-sm leading-6 text-zinc-600">
+              Área responsável: {initiative.area}
+            </p>
+            <p className="mt-3 text-xs leading-5 text-zinc-500">
+              {initiative.justification}
+            </p>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 

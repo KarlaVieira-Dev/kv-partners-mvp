@@ -3,7 +3,13 @@
 import { Radar, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import type { GrowthResponse, RiskRow, RisksResponse } from "@/lib/google-sheets/types";
+import type {
+  ExecutiveAccountRow,
+  ExecutiveAccountsResponse,
+  GrowthResponse,
+  RiskRow,
+  RisksResponse,
+} from "@/lib/google-sheets/types";
 import { cn } from "@/lib/utils";
 import {
   DataTable,
@@ -94,7 +100,17 @@ type InitiativeRankingRow = {
   priority: string;
 };
 
+type RecommendedOffer = {
+  accountName: string;
+  expectedImpact: string;
+  nextAction: string;
+  offer: string;
+  probability: string;
+  score: number;
+};
+
 export function GrowthCenter() {
+  const [accounts, setAccounts] = useState<ExecutiveAccountRow[]>([]);
   const [growth, setGrowth] = useState<GrowthResponse>(emptyGrowth);
   const [risks, setRisks] = useState<RiskRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -118,13 +134,16 @@ export function GrowthCenter() {
   useEffect(() => {
     async function loadGrowth() {
       try {
-        const [growthResponse, risksResponse] = await Promise.all([
+        const [accountsResponse, growthResponse, risksResponse] = await Promise.all([
+          fetch("/api/accounts"),
           fetch("/api/growth"),
           fetch("/api/risks"),
         ]);
+        const accountsData = (await accountsResponse.json()) as ExecutiveAccountsResponse;
         const data = (await growthResponse.json()) as GrowthResponse;
         const risksData = (await risksResponse.json()) as RisksResponse;
 
+        setAccounts(accountsData.accounts);
         setGrowth({
           ...emptyGrowth,
           ...data,
@@ -310,6 +329,11 @@ export function GrowthCenter() {
     [risks],
   );
 
+  const recommendedOffers = useMemo(
+    () => buildRecommendedOffers(risks, accounts),
+    [accounts, risks],
+  );
+
   const initiativeRanking = useMemo<InitiativeRankingRow[]>(
     () =>
       [...growth.recommendations]
@@ -480,6 +504,56 @@ export function GrowthCenter() {
               <p className="mt-3 text-xs font-medium text-zinc-700">
                 {candidate.action}
               </p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm font-medium text-zinc-500">
+              O que vender para quem?
+            </p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">
+              Ofertas Recomendadas
+            </h2>
+          </div>
+          <p className="text-sm text-zinc-500">
+            Baseado nas Top 3 contas por Potencial de Expansão.
+          </p>
+        </div>
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          {recommendedOffers.map((offer) => (
+            <article
+              className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+              key={offer.accountName}
+            >
+              <p className="text-sm font-semibold text-zinc-950">
+                {offer.accountName}
+              </p>
+              <p className="mt-3 text-2xl font-semibold tracking-tight text-zinc-950">
+                {offer.score}
+              </p>
+              <p className="text-xs text-zinc-500">Potencial de Expansão</p>
+              <div className="mt-4 space-y-2 text-sm leading-6 text-zinc-600">
+                <p>
+                  <strong className="text-zinc-950">Oferta:</strong>{" "}
+                  {offer.offer}
+                </p>
+                <p>
+                  <strong className="text-zinc-950">Probabilidade:</strong>{" "}
+                  {offer.probability}
+                </p>
+                <p>
+                  <strong className="text-zinc-950">Impacto esperado:</strong>{" "}
+                  {offer.expectedImpact}
+                </p>
+                <p>
+                  <strong className="text-zinc-950">Próxima ação:</strong>{" "}
+                  {offer.nextAction}
+                </p>
+              </div>
             </article>
           ))}
         </div>
@@ -951,6 +1025,47 @@ function buildExpansionCandidates(risks: RiskRow[]): ExpansionCandidate[] {
       score: risk ? opportunityScore(risk.healthScore, risk.riskScore) : 0,
     };
   });
+}
+
+function buildRecommendedOffers(
+  risks: RiskRow[],
+  accounts: ExecutiveAccountRow[],
+): RecommendedOffer[] {
+  return [...risks]
+    .sort(
+      (first, second) =>
+        opportunityScore(second.healthScore, second.riskScore) -
+        opportunityScore(first.healthScore, first.riskScore),
+    )
+    .slice(0, 3)
+    .map((risk) => {
+      const account = accounts.find((row) => row.account === risk.accountName);
+      const plan = normalize(account?.plan ?? "");
+      const type = normalize(account?.type ?? risk.accountType);
+      const score = opportunityScore(risk.healthScore, risk.riskScore);
+      const isEnterprise =
+        plan.includes("enterprise") ||
+        plan.includes("premium") ||
+        type.includes("enterprise");
+      const hasLowRisk = risk.riskScore < 35;
+      const hasHighHealth = risk.healthScore >= 75;
+      const offer = isEnterprise
+        ? "Governança Avançada"
+        : hasHighHealth && hasLowRisk
+          ? "Expansão de Usuários"
+          : "Upgrade de Plano";
+
+      return {
+        accountName: risk.accountName,
+        expectedImpact: score >= 60 ? "Alto" : "Médio",
+        nextAction: isEnterprise
+          ? "Abordagem consultiva com foco em governança e módulos avançados"
+          : "Abordagem comercial consultiva para validar escopo de expansão",
+        offer,
+        probability: hasHighHealth && hasLowRisk ? "Alta" : "Média",
+        score,
+      };
+    });
 }
 
 function topLabels<T>(
