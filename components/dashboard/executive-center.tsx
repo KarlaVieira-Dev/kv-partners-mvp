@@ -50,29 +50,8 @@ const isPriority = (value: string) => {
   );
 };
 
-const riskColor = (level: string) => {
-  const normalized = normalize(level);
-
-  if (normalized.includes("critico")) {
-    return "bg-red-50 text-red-700";
-  }
-
-  if (normalized.includes("alto")) {
-    return "bg-rose-50 text-rose-700";
-  }
-
-  if (normalized.includes("medio")) {
-    return "bg-amber-50 text-amber-700";
-  }
-
-  return "bg-emerald-50 text-emerald-700";
-};
-
 const opportunityScore = (healthScore: number, riskScore: number) =>
   Math.round(healthScore - riskScore * 0.5);
-
-const unique = (items: string[]) =>
-  Array.from(new Set(items.map((item) => item.trim()).filter(Boolean)));
 
 const emptyGrowth: GrowthResponse = {
   benchmarks: [],
@@ -96,13 +75,6 @@ type TrendSignal = {
   justification: string;
 };
 
-type InitiativeImpact = {
-  initiative: string;
-  expectedImpact: string;
-  priority: string;
-  justification: string;
-};
-
 type TrafficStatus = "Verde" | "Amarelo" | "Vermelho";
 
 type ExecutivePulseItem = {
@@ -113,10 +85,13 @@ type ExecutivePulseItem = {
   trend: "↑" | "↓" | "→";
 };
 
-type TodayAction = {
+type ExecutivePlanAction = {
   impact: string;
-  priority: string;
+  reason: string;
+  source?: string;
   status: TrafficStatus;
+  suggestedAction?: string;
+  suggestedDeadline: string;
   title: string;
 };
 
@@ -125,18 +100,6 @@ type ImpactSemaphore = {
   explanation: string;
   expectedImpact: "Alto" | "Médio" | "Baixo";
   status: TrafficStatus;
-};
-
-type RecommendedDecision = {
-  action: string;
-  impact: string;
-  mainReason: string;
-  riskLevel: string;
-  riskScore: number;
-  source: string;
-  suggestedAction: string;
-  suggestedDeadline: string;
-  urgency: TrafficStatus;
 };
 
 type InitiativeRanking = {
@@ -195,33 +158,6 @@ const buildTrendSignals = (
       justification: `Média atual do Índice de Saúde em ${averageHealth}, sem histórico temporal suficiente para afirmar evolução real.`,
     },
   ];
-};
-
-const buildInitiativeImpacts = (
-  recommendations: GrowthRecommendationRow[],
-  highRiskAccounts: RiskRow[],
-): InitiativeImpact[] => {
-  const recommendationInitiatives = [...recommendations]
-    .sort((first, second) => second.opportunityScore - first.opportunityScore)
-    .slice(0, 3)
-    .map((recommendation) => ({
-      expectedImpact: recommendation.estimatedImpact,
-      initiative: recommendation.recommendation,
-      justification: `Priorizada em ${recommendation.area} com Potencial de Expansão ${recommendation.opportunityScore}.`,
-      priority: recommendation.priority,
-    }));
-
-  if (recommendationInitiatives.length > 0) {
-    return recommendationInitiatives;
-  }
-
-  return highRiskAccounts.slice(0, 3).map((risk) => ({
-    expectedImpact:
-      "reduz fricção operacional, aumenta adoção e reduz exposição de risco.",
-    initiative: risk.suggestedAction || `Atuar sobre ${risk.accountName}`,
-    justification: `${risk.accountName} está em ${risk.riskLevel} por ${risk.mainReason}.`,
-    priority: risk.riskLevel,
-  }));
 };
 
 const buildExecutivePulse = (
@@ -309,35 +245,6 @@ const buildExecutivePulse = (
   ];
 };
 
-const buildTodayActions = (
-  priorityAccount: RiskRow | undefined,
-  topOpportunity: RiskRow | undefined,
-  strategicPriorities: string[],
-): TodayAction[] => [
-  {
-    impact: "Retenção e adoção",
-    priority: priorityAccount?.riskLevel ?? "Crítica",
-    status: "Vermelho",
-    title: priorityAccount
-      ? `Mitigar ${priorityAccount.accountName}`
-      : "Mitigar conta mais crítica",
-  },
-  {
-    impact: "Redução de atrito operacional",
-    priority: "Alta",
-    status: "Amarelo",
-    title: strategicPriorities[0] || "Revisar permissões e acessos",
-  },
-  {
-    impact: "Crescimento",
-    priority: "Oportunidade",
-    status: "Verde",
-    title: topOpportunity
-      ? `Expandir ${topOpportunity.accountName}`
-      : "Avaliar oportunidade de expansão",
-  },
-];
-
 const buildImpactSemaphores = (
   risks: RiskRow[],
   onboardings: OnboardingsResponse["onboardings"],
@@ -396,26 +303,52 @@ const buildImpactSemaphores = (
   ];
 };
 
-const buildRecommendedDecision = (
+const buildExecutivePlan = (
   priorityAccount: RiskRow | undefined,
-): RecommendedDecision | undefined => {
-  if (!priorityAccount) {
-    return undefined;
-  }
+  topOpportunity: RiskRow | undefined,
+  topInitiative: InitiativeRanking | undefined,
+): ExecutivePlanAction[] => {
+  const isCritical =
+    priorityAccount && normalize(priorityAccount.riskLevel).includes("critico");
 
-  const isCritical = normalize(priorityAccount.riskLevel).includes("critico");
-
-  return {
-    action: `Mitigar ${priorityAccount.accountName}`,
-    impact: "Retenção e adoção",
-    mainReason: priorityAccount.mainReason,
-    riskLevel: priorityAccount.riskLevel,
-    riskScore: priorityAccount.riskScore,
-    source: "07_IOI_Scores",
-    suggestedAction: priorityAccount.suggestedAction,
-    suggestedDeadline: isCritical ? "7 dias" : "14 dias",
-    urgency: isCritical ? "Vermelho" : "Amarelo",
-  };
+  return [
+    {
+      impact: "Retenção e adoção",
+      reason: priorityAccount
+        ? `Maior risco consolidado do ecossistema: Índice de Risco ${priorityAccount.riskScore}, nível ${priorityAccount.riskLevel}.`
+        : "Sem conta crítica consolidada nas fontes atuais.",
+      source: "07_IOI_Scores",
+      status: isCritical ? "Vermelho" : "Amarelo",
+      suggestedAction: priorityAccount?.suggestedAction,
+      suggestedDeadline: isCritical ? "7 dias" : "14 dias",
+      title: priorityAccount
+        ? `Mitigar ${priorityAccount.accountName}`
+        : "Mitigar conta mais crítica",
+    },
+    {
+      impact: "Redução de atrito operacional",
+      reason: topInitiative
+        ? `Principal iniciativa estratégica com pontuação ${topInitiative.score}.`
+        : "Iniciativa estratégica ainda não consolidada.",
+      status: "Amarelo",
+      suggestedDeadline: "30 dias",
+      title: topInitiative?.initiative || "Priorizar iniciativa estratégica",
+    },
+    {
+      impact: "Crescimento",
+      reason: topOpportunity
+        ? `Maior Potencial de Expansão: ${opportunityScore(
+            topOpportunity.healthScore,
+            topOpportunity.riskScore,
+          )}.`
+        : "Sem oportunidade consolidada nas fontes atuais.",
+      status: "Verde",
+      suggestedDeadline: "30 dias",
+      title: topOpportunity
+        ? `Expandir ${topOpportunity.accountName}`
+        : "Avaliar oportunidade de expansão",
+    },
+  ];
 };
 
 const buildInitiativeRanking = (
@@ -574,22 +507,6 @@ export function ExecutiveCenter() {
     [healthAverage, highRiskAccounts.length, riskAverage, risks],
   );
 
-  const strategicPriorities = useMemo(() => {
-    const recommendationPriorities = growth.recommendations
-      .filter((recommendation) => isPriority(recommendation.priority))
-      .map((recommendation) => recommendation.recommendation);
-    const riskPriorities = highRiskAccounts.map((risk) => risk.suggestedAction);
-    const onboardingPriorities = onboardings
-      .filter((onboarding) => normalize(onboarding.risk).includes("alto"))
-      .map((onboarding) => onboarding.nextAction);
-
-    return unique([
-      ...recommendationPriorities,
-      ...riskPriorities,
-      ...onboardingPriorities,
-    ]).slice(0, 4);
-  }, [growth.recommendations, highRiskAccounts, onboardings]);
-
   const topOpportunities = useMemo(
     () =>
       [...risks]
@@ -614,29 +531,19 @@ export function ExecutiveCenter() {
     [feedbacks, onboardings, risks],
   );
 
-  const initiativeImpacts = useMemo(
-    () => buildInitiativeImpacts(growth.recommendations, highRiskAccounts),
-    [growth.recommendations, highRiskAccounts],
-  );
-
-  const todayActions = useMemo(
-    () => buildTodayActions(priorityAccount, topOpportunity, strategicPriorities),
-    [priorityAccount, strategicPriorities, topOpportunity],
-  );
-
   const impactSemaphores = useMemo(
     () => buildImpactSemaphores(risks, onboardings, feedbacks),
     [feedbacks, onboardings, risks],
   );
 
-  const recommendedDecision = useMemo(
-    () => buildRecommendedDecision(priorityAccount),
-    [priorityAccount],
-  );
-
   const initiativeRanking = useMemo(
     () => buildInitiativeRanking(growth.recommendations, risks, onboardings, feedbacks),
     [feedbacks, growth.recommendations, onboardings, risks],
+  );
+
+  const executivePlan = useMemo(
+    () => buildExecutivePlan(priorityAccount, topOpportunity, initiativeRanking[0]),
+    [initiativeRanking, priorityAccount, topOpportunity],
   );
 
   const noActionConsequence = priorityAccount
@@ -666,142 +573,67 @@ export function ExecutiveCenter() {
         </div>
       </section>
 
-      <KPIGrid isLoading={isLoading} metrics={metrics} />
+      <QuestionBlock eyebrow="Leitura em poucos segundos" title="Resumo Executivo">
+        <ExecutiveSummaryStrip
+          initiative={initiativeRanking[0]}
+          priorityAccount={priorityAccount}
+          topOpportunity={topOpportunity}
+        />
+      </QuestionBlock>
 
-      <QuestionBlock eyebrow="Cockpit executivo" title="Pulso Executivo">
+      <QuestionBlock eyebrow="O que devo fazer?" title="Plano Executivo">
+        <ExecutivePlanGrid actions={executivePlan} />
+      </QuestionBlock>
+
+      <QuestionBlock
+        eyebrow="O que acontece se eu não agir?"
+        title="Consequência de Não Agir"
+      >
+        <p className="text-sm leading-6 text-zinc-600">{noActionConsequence}</p>
+        {priorityAccount?.suggestedAction ? (
+          <p className="mt-3 text-sm leading-6 text-zinc-600">
+            A conta afetada é {priorityAccount.accountName}. A ação recomendada
+            reduz a chance de atraso na geração de valor, fricção operacional e
+            impacto em adoção ou retenção.
+          </p>
+        ) : null}
+      </QuestionBlock>
+
+      <QuestionBlock eyebrow="Inteligência de Decisão" title="Impacto Esperado">
+        <ImpactSemaphoreGrid items={impactSemaphores} />
+      </QuestionBlock>
+
+      <QuestionBlock
+        eyebrow="O que priorizar nos próximos 90 dias?"
+        title="Ranking de Iniciativas"
+      >
+        <InitiativeRankingList initiatives={initiativeRanking} />
+      </QuestionBlock>
+
+      <QuestionBlock
+        eyebrow="Onde crescer?"
+        title="Principais Oportunidades de Expansão"
+      >
+        <ExpansionOpportunityList opportunities={topOpportunities} />
+      </QuestionBlock>
+
+      <QuestionBlock eyebrow="O que mudou?" title="Tendências Identificadas">
+        <TrendList trends={trendSignals} />
+        <p className="mt-4 text-xs leading-5 text-zinc-500">
+          Leitura baseada no recorte atual das fontes. Onde não há histórico
+          temporal suficiente, a variação é tratada como sinal de tendência para
+          demonstração.
+        </p>
+      </QuestionBlock>
+
+      <QuestionBlock
+        eyebrow="Como está a saúde geral?"
+        title="Pulso Executivo"
+      >
         <ExecutivePulseGrid items={executivePulse} />
       </QuestionBlock>
 
-      <QuestionBlock
-        eyebrow="Se eu só puder fazer uma coisa hoje, qual é?"
-        title="Decisão Recomendada Agora"
-      >
-        <RecommendedDecisionCard decision={recommendedDecision} />
-      </QuestionBlock>
-
-      <QuestionBlock eyebrow="Prioridade do dia" title="O que fazer hoje">
-        <TodayActionGrid actions={todayActions} />
-      </QuestionBlock>
-
-      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <QuestionBlock
-          eyebrow="1. O que exige atenção agora?"
-          title={priorityAccount?.accountName ?? "Nenhuma conta prioritária"}
-        >
-          {priorityAccount ? (
-            <div className="grid gap-4 md:grid-cols-[0.8fr_1.2fr]">
-              <div className="flex flex-wrap gap-2">
-                <Badge>Índice de Risco {priorityAccount.riskScore}</Badge>
-                <span
-                  className={cn(
-                    "rounded-md px-2 py-1 text-xs font-medium",
-                    riskColor(priorityAccount.riskLevel),
-                  )}
-                >
-                  {priorityAccount.riskLevel}
-                </span>
-              </div>
-              <div className="space-y-3 text-sm leading-6 text-zinc-600">
-                <p>
-                  <strong className="text-zinc-950">Motivo:</strong>{" "}
-                  {priorityAccount.mainReason}
-                </p>
-                <p>
-                  <strong className="text-zinc-950">Ação sugerida:</strong>{" "}
-                  {priorityAccount.suggestedAction}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <EmptyState />
-          )}
-        </QuestionBlock>
-
-        <QuestionBlock
-          eyebrow="2. O que mudou?"
-          title="Tendências identificadas"
-        >
-          <TrendList trends={trendSignals} />
-          <p className="mt-4 text-xs leading-5 text-zinc-500">
-            Leitura baseada no recorte atual das fontes. Onde não há histórico
-            temporal suficiente, a variação é tratada como sinal de tendência
-            para demonstração.
-          </p>
-        </QuestionBlock>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-3">
-        <QuestionBlock eyebrow="3. Onde investir?" title="Prioridades estratégicas">
-          <List
-            empty="Sem recomendações priorizadas nas fontes atuais."
-            items={strategicPriorities}
-          />
-        </QuestionBlock>
-
-        <QuestionBlock
-          eyebrow="4. Quem possui maior potencial de expansão?"
-          title="Principais Oportunidades de Expansão"
-        >
-          {topOpportunities.length > 0 ? (
-            <div className="space-y-3">
-              {topOpportunities.map((opportunity) => (
-                <div
-                  className="border-t border-zinc-100 pt-3 first:border-t-0 first:pt-0"
-                  key={opportunity.accountId}
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-zinc-950">
-                      {opportunity.accountName}
-                    </p>
-                    <Badge>
-                      Potencial de Expansão{" "}
-                      {opportunityScore(
-                        opportunity.healthScore,
-                        opportunity.riskScore,
-                      )}
-                    </Badge>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-zinc-600">
-                    Motivo: Índice de Saúde alto combinado ao risco atual. Próxima ação:{" "}
-                    {opportunity.suggestedAction ||
-                      "avaliar expansão comercial com base no contexto da conta."}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState />
-          )}
-        </QuestionBlock>
-
-        <QuestionBlock
-          eyebrow="5. O que acontece se não fizermos nada?"
-          title="Consequência provável"
-        >
-          <p className="text-sm leading-6 text-zinc-600">
-            {noActionConsequence}
-          </p>
-          {priorityAccount?.suggestedAction ? (
-            <p className="mt-3 text-sm leading-6 text-zinc-600">
-              A ação recomendada reduz a chance de atraso na geração de valor,
-              fricção operacional e impacto em adoção ou retenção.
-            </p>
-          ) : null}
-        </QuestionBlock>
-      </section>
-
-      <QuestionBlock
-        eyebrow="Inteligência de Decisão"
-        title="Impacto esperado"
-      >
-        <ImpactSemaphoreGrid items={impactSemaphores} />
-        <div className="mt-4">
-          <InitiativeImpactList initiatives={initiativeImpacts} />
-        </div>
-        <div className="mt-4">
-          <InitiativeRankingList initiatives={initiativeRanking} />
-        </div>
-      </QuestionBlock>
+      <KPIGrid isLoading={isLoading} metrics={metrics} />
 
       <IntelligentSummary
         items={[
@@ -866,25 +698,6 @@ function EmptyState() {
   );
 }
 
-function List({ empty, items }: { empty: string; items: string[] }) {
-  if (items.length === 0) {
-    return <p className="text-sm leading-6 text-zinc-500">{empty}</p>;
-  }
-
-  return (
-    <div className="space-y-3">
-      {items.map((item) => (
-        <p
-          className="border-t border-zinc-100 pt-3 text-sm leading-6 text-zinc-600 first:border-t-0 first:pt-0"
-          key={item}
-        >
-          {item}
-        </p>
-      ))}
-    </div>
-  );
-}
-
 function QuestionBlock({
   children,
   eyebrow,
@@ -902,6 +715,91 @@ function QuestionBlock({
       </h2>
       <div className="mt-4">{children}</div>
     </section>
+  );
+}
+
+function ExecutiveSummaryStrip({
+  initiative,
+  priorityAccount,
+  topOpportunity,
+}: {
+  initiative: InitiativeRanking | undefined;
+  priorityAccount: RiskRow | undefined;
+  topOpportunity: RiskRow | undefined;
+}) {
+  const items = [
+    {
+      label: "Atenção imediata",
+      value: priorityAccount
+        ? `${priorityAccount.accountName} em risco ${priorityAccount.riskLevel.toLowerCase()}.`
+        : "Sem conta crítica consolidada.",
+    },
+    {
+      label: "Oportunidade",
+      value: topOpportunity
+        ? `${topOpportunity.accountName} pronto para expansão.`
+        : "Sem oportunidade consolidada.",
+    },
+    {
+      label: "Melhor iniciativa",
+      value: initiative?.initiative ?? "Sem iniciativa priorizada.",
+    },
+    {
+      label: "Impacto esperado",
+      value: "Aumento de adoção e retenção.",
+    },
+  ];
+
+  return (
+    <div className="grid gap-3 md:grid-cols-4">
+      {items.map((item) => (
+        <article
+          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+          key={item.label}
+        >
+          <p className="text-xs font-medium text-zinc-500">{item.label}</p>
+          <p className="mt-2 text-sm font-semibold leading-6 text-zinc-950">
+            {item.value}
+          </p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function ExecutivePlanGrid({ actions }: { actions: ExecutivePlanAction[] }) {
+  return (
+    <div className="grid gap-3 lg:grid-cols-3">
+      {actions.map((action, index) => (
+        <article
+          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+          key={`${action.status}-${action.title}`}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-2xl font-semibold text-zinc-950">
+              {index + 1}
+            </span>
+            <StatusPill status={action.status} />
+          </div>
+          <p className="mt-4 text-base font-semibold text-zinc-950">
+            {action.title}
+          </p>
+          <p className="mt-3 text-sm leading-6 text-zinc-600">
+            Motivo: {action.reason}
+          </p>
+          {action.suggestedAction ? (
+            <p className="mt-2 text-sm leading-6 text-zinc-600">
+              Ação sugerida: {action.suggestedAction}
+            </p>
+          ) : null}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Badge>Impacto: {action.impact}</Badge>
+            <Badge>Prazo sugerido: {action.suggestedDeadline}</Badge>
+            {action.source ? <Badge>Fonte: {action.source}</Badge> : null}
+          </div>
+        </article>
+      ))}
+    </div>
   );
 }
 
@@ -933,90 +831,6 @@ function ExecutivePulseGrid({ items }: { items: ExecutivePulseItem[] }) {
           </p>
         </article>
       ))}
-    </div>
-  );
-}
-
-function TodayActionGrid({ actions }: { actions: TodayAction[] }) {
-  return (
-    <div className="grid gap-3 md:grid-cols-3">
-      {actions.map((action) => (
-        <article
-          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
-          key={`${action.status}-${action.title}`}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <StatusPill status={action.status} />
-            <StatusDot status={action.status} />
-          </div>
-          <p className="mt-4 text-base font-semibold text-zinc-950">
-            {action.title}
-          </p>
-          <p className="mt-3 text-sm leading-6 text-zinc-600">
-            Prioridade: {action.priority}
-          </p>
-          <p className="text-sm leading-6 text-zinc-600">
-            Impacto: {action.impact}
-          </p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function RecommendedDecisionCard({
-  decision,
-}: {
-  decision: RecommendedDecision | undefined;
-}) {
-  if (!decision) {
-    return <EmptyState />;
-  }
-
-  return (
-    <article className="rounded-lg border border-zinc-100 bg-zinc-50 p-4">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusPill status={decision.urgency} />
-            <Badge>Fonte: {decision.source}</Badge>
-          </div>
-          <h3 className="mt-4 text-xl font-semibold tracking-tight text-zinc-950">
-            {decision.action}
-          </h3>
-          <p className="mt-2 text-sm leading-6 text-zinc-600">
-            {decision.suggestedAction}
-          </p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[520px]">
-          <MiniDecisionMetric label="Índice de Risco" value={decision.riskScore} />
-          <MiniDecisionMetric label="Nível de Risco" value={decision.riskLevel} />
-          <MiniDecisionMetric label="Impacto" value={decision.impact} />
-          <MiniDecisionMetric
-            label="Prazo sugerido"
-            value={decision.suggestedDeadline}
-          />
-        </div>
-      </div>
-      <p className="mt-4 text-sm leading-6 text-zinc-600">
-        <strong className="text-zinc-950">Motivo:</strong>{" "}
-        {decision.mainReason}
-      </p>
-    </article>
-  );
-}
-
-function MiniDecisionMetric({
-  label,
-  value,
-}: {
-  label: string;
-  value: number | string;
-}) {
-  return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-3">
-      <p className="text-xs text-zinc-500">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-zinc-950">{value}</p>
     </div>
   );
 }
@@ -1097,6 +911,48 @@ function InitiativeRankingList({
   );
 }
 
+function ExpansionOpportunityList({
+  opportunities,
+}: {
+  opportunities: RiskRow[];
+}) {
+  if (opportunities.length === 0) {
+    return <EmptyState />;
+  }
+
+  return (
+    <div className="grid gap-3 lg:grid-cols-3">
+      {opportunities.map((opportunity) => (
+        <article
+          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+          key={opportunity.accountId}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-zinc-950">
+              {opportunity.accountName}
+            </p>
+            <Badge>
+              Potencial{" "}
+              {opportunityScore(
+                opportunity.healthScore,
+                opportunity.riskScore,
+              )}
+            </Badge>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-zinc-600">
+            Motivo: Índice de Saúde alto combinado ao risco atual.
+          </p>
+          <p className="mt-2 text-sm leading-6 text-zinc-600">
+            Próxima ação:{" "}
+            {opportunity.suggestedAction ||
+              "avaliar expansão comercial com base no contexto da conta."}
+          </p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 function TrendList({ trends }: { trends: TrendSignal[] }) {
   return (
     <div className="space-y-3">
@@ -1118,40 +974,6 @@ function TrendList({ trends }: { trends: TrendSignal[] }) {
             {trend.justification}
           </p>
         </div>
-      ))}
-    </div>
-  );
-}
-
-function InitiativeImpactList({
-  initiatives,
-}: {
-  initiatives: InitiativeImpact[];
-}) {
-  if (initiatives.length === 0) {
-    return <EmptyState />;
-  }
-
-  return (
-    <div className="grid gap-3 md:grid-cols-3">
-      {initiatives.map((initiative) => (
-        <article
-          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
-          key={initiative.initiative}
-        >
-          <p className="text-sm font-semibold text-zinc-950">
-            {initiative.initiative}
-          </p>
-          <p className="mt-3 text-sm leading-6 text-zinc-600">
-            Impacto esperado: {initiative.expectedImpact}
-          </p>
-          <p className="mt-2 text-sm leading-6 text-zinc-600">
-            Justificativa: {initiative.justification}
-          </p>
-          <div className="mt-3">
-            <Badge>Prioridade {initiative.priority}</Badge>
-          </div>
-        </article>
       ))}
     </div>
   );
