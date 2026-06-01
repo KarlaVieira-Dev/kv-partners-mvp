@@ -145,7 +145,7 @@ export function AccountsCenter() {
       },
       {
         detail: "Média do health_score",
-        label: "Índice de Saúde (Health Score) médio",
+        label: "Índice de Saúde médio",
         value: average(accounts.map((account) => account.healthScore)),
       },
     ],
@@ -160,7 +160,7 @@ export function AccountsCenter() {
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-medium text-zinc-500">
-              Inteligencia de Contas
+              Inteligência de Contas
             </p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
               Contas
@@ -222,7 +222,7 @@ export function AccountsCenter() {
             onClick={() => setSortByOpportunity((current) => !current)}
             type="button"
           >
-            Opportunity Score ↓
+            Potencial de Expansão ↓
           </button>
       </FilterBar>
 
@@ -238,7 +238,7 @@ export function AccountsCenter() {
           { header: "Porte", render: (account) => account.size },
           { header: "Status", render: (account) => account.status },
           {
-            header: "Índice de Saúde (Health Score)",
+            header: "Índice de Saúde",
             render: (account) => (
               <span
                 className={cn(
@@ -251,7 +251,7 @@ export function AccountsCenter() {
             ),
           },
           {
-            header: "Índice de Risco (Risk Score)",
+            header: "Índice de Risco",
             render: (account) => (
               <span
                 className={cn(
@@ -264,7 +264,7 @@ export function AccountsCenter() {
             ),
           },
           {
-            header: "Opportunity Score",
+            header: "Potencial de Expansão",
             render: (account) => (
               <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
                 {opportunityScore(account.healthScore, account.riskScore)}
@@ -292,7 +292,7 @@ export function AccountsCenter() {
       <IntelligentSummary
         items={[
           "Contas gestoras concentram a visão executiva do ecossistema.",
-          "Contas com Índice de Saúde (Health Score) mais baixo devem ser acompanhadas junto ao Centro de Riscos.",
+          "Contas com Índice de Saúde mais baixo devem ser acompanhadas junto ao Centro de Riscos.",
           "Segmento, plano e localização ajudam a priorizar a estratégia de relacionamento.",
         ]}
         meta={[

@@ -147,16 +147,21 @@ export function RiskCenter() {
   }, [risks]);
 
   const riskDistribution = useMemo(() => {
-    const levels = ["Baixo", "Medio", "Alto", "Critico"];
+    const levels = [
+      { label: "Baixo", match: "baixo" },
+      { label: "Médio", match: "medio" },
+      { label: "Alto", match: "alto" },
+      { label: "Crítico", match: "critico" },
+    ];
 
     return levels.map((level) => ({
-      label: level,
+      label: level.label,
       value: risks.filter((risk) =>
         risk.riskLevel
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "")
           .toLowerCase()
-          .includes(level.toLowerCase()),
+          .includes(level.match),
       ).length,
     }));
   }, [risks]);
@@ -181,13 +186,13 @@ export function RiskCenter() {
 
     return [
       {
-        detail: "Media de risk_score",
-        label: "Índice de Risco (Risk Score) médio",
+        detail: "Média de risk_score em 07_IOI_Scores",
+        label: "Índice de Risco médio",
         value: average(risks.map((risk) => risk.riskScore)),
       },
       {
-        detail: "Media de health_score",
-        label: "Índice de Saúde (Health Score) médio",
+        detail: "Média de health_score",
+        label: "Índice de Saúde médio",
         value: average(risks.map((risk) => risk.healthScore)),
       },
       {
@@ -288,10 +293,10 @@ export function RiskCenter() {
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="rounded-md bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700">
-              Risco {priorityAccount?.riskScore ?? 0}
+              Índice de Risco {priorityAccount?.riskScore ?? 0}
             </span>
             <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
-              {priorityAccount?.riskLevel ?? "Sem nivel"}
+              {priorityAccount?.riskLevel ?? "Sem nível"}
             </span>
           </div>
         </div>
@@ -341,13 +346,13 @@ export function RiskCenter() {
           </div>
           <div className="grid gap-3 sm:grid-cols-3 lg:w-[540px]">
             <FilterSelect
-              label="Nivel de risco"
+              label="Nível de risco"
               onChange={setRiskLevel}
               options={filterOptions.riskLevels}
               value={riskLevel}
             />
             <FilterSelect
-              label="Nivel de saude"
+              label="Nível de saúde"
               onChange={setHealthLevel}
               options={filterOptions.healthLevels}
               value={healthLevel}
@@ -371,7 +376,7 @@ export function RiskCenter() {
           { header: "Tipo", render: (risk) => risk.accountType },
           { header: "Status", render: (risk) => risk.accountStatus },
           {
-            header: "Índice de Risco (Risk Score)",
+            header: "Índice de Risco",
             render: (risk) => (
               <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
                 {risk.riskScore}
@@ -379,7 +384,7 @@ export function RiskCenter() {
             ),
           },
           {
-            header: "Índice de Saúde (Health Score)",
+            header: "Índice de Saúde",
             render: (risk) => (
               <span
                 className={cn(
@@ -412,7 +417,7 @@ export function RiskCenter() {
           },
           {
             className: "max-w-[240px] leading-6",
-            header: "Acao Sugerida",
+            header: "Ação Sugerida",
             render: (risk) => risk.suggestedAction,
           },
         ]}

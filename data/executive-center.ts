@@ -5,13 +5,13 @@ export const navigationItems = [
   { label: "Centro de Feedbacks", href: "/feedback-center" },
   { label: "Centro de Riscos", href: "/risk-center" },
   { label: "Centro de Crescimento", href: "/growth-center" },
-  { label: "AI Copilot", href: "/ai-copilot" },
+  { label: "Assistente Estratégico", href: "/ai-copilot" },
 ];
 
 export const intelligenceSignals = [
   "Contas com onboarding incompleto apresentam maior risco operacional.",
   "Feedbacks negativos recorrentes indicam fricção na configuração de permissões.",
-  "Contas com Índice de Saúde (Health Score) elevado possuem potencial de expansão.",
+  "Contas com Índice de Saúde elevado possuem potencial de expansão.",
 ];
 
 export const ecosystemModules = [

@@ -103,6 +103,30 @@ type InitiativeImpact = {
   justification: string;
 };
 
+type TrafficStatus = "Verde" | "Amarelo" | "Vermelho";
+
+type ExecutivePulseItem = {
+  area: string;
+  metric: string;
+  reason: string;
+  status: TrafficStatus;
+  trend: "↑" | "↓" | "→";
+};
+
+type TodayAction = {
+  impact: string;
+  priority: string;
+  status: TrafficStatus;
+  title: string;
+};
+
+type ImpactSemaphore = {
+  area: string;
+  explanation: string;
+  expectedImpact: "Alto" | "Médio" | "Baixo";
+  status: TrafficStatus;
+};
+
 const buildTrendSignals = (
   risks: RiskRow[],
   onboardings: OnboardingsResponse["onboardings"],
@@ -143,10 +167,10 @@ const buildTrendSignals = (
           : "Sem recorrência negativa relevante em permissões nas fontes atuais.",
     },
     {
-      description: "Health Score estável",
+      description: "Índice de Saúde estável",
       direction: "→",
       impact: averageHealth >= 70 ? "Baixo" : averageHealth >= 50 ? "Médio" : "Alto",
-      justification: `Média atual de Health Score em ${averageHealth}, sem histórico temporal suficiente para afirmar evolução real.`,
+      justification: `Média atual do Índice de Saúde em ${averageHealth}, sem histórico temporal suficiente para afirmar evolução real.`,
     },
   ];
 };
@@ -161,7 +185,7 @@ const buildInitiativeImpacts = (
     .map((recommendation) => ({
       expectedImpact: recommendation.estimatedImpact,
       initiative: recommendation.recommendation,
-      justification: `Priorizada em ${recommendation.area} com Opportunity Score ${recommendation.opportunityScore}.`,
+      justification: `Priorizada em ${recommendation.area} com Potencial de Expansão ${recommendation.opportunityScore}.`,
       priority: recommendation.priority,
     }));
 
@@ -176,6 +200,178 @@ const buildInitiativeImpacts = (
     justification: `${risk.accountName} está em ${risk.riskLevel} por ${risk.mainReason}.`,
     priority: risk.riskLevel,
   }));
+};
+
+const buildExecutivePulse = (
+  risks: RiskRow[],
+  onboardings: OnboardingsResponse["onboardings"],
+  feedbacks: FeedbackRow[],
+): ExecutivePulseItem[] => {
+  const highRiskAccounts = risks.filter(isHighOrCriticalRisk);
+  const criticalAccounts = risks.filter((risk) =>
+    normalize(risk.riskLevel).includes("critico"),
+  );
+  const averageHealth = average(risks.map((risk) => risk.healthScore));
+  const averageExpansion = average(
+    risks.map((risk) => opportunityScore(risk.healthScore, risk.riskScore)),
+  );
+  const onboardingAttention = onboardings.filter(
+    (onboarding) =>
+      normalize(onboarding.risk).includes("alto") ||
+      onboarding.daysInProgress >= 14 ||
+      onboarding.progress < 50,
+  );
+  const negativeFeedbacks = feedbacks.filter((feedback) => {
+    const text = normalize(
+      `${feedback.sentiment} ${feedback.priority} ${feedback.theme} ${feedback.summary}`,
+    );
+
+    return (
+      text.includes("negativo") ||
+      text.includes("critico") ||
+      text.includes("alta")
+    );
+  });
+
+  return [
+    {
+      area: "Crescimento",
+      metric: `${averageExpansion} de Potencial de Expansão médio`,
+      reason:
+        averageExpansion >= 60
+          ? "contas saudáveis com risco controlado"
+          : "oportunidades ainda dependem de redução de risco",
+      status: averageExpansion >= 60 ? "Verde" : averageExpansion >= 40 ? "Amarelo" : "Vermelho",
+      trend: averageExpansion >= 60 ? "↑" : "→",
+    },
+    {
+      area: "Saúde",
+      metric: `${averageHealth} de Índice de Saúde médio`,
+      reason:
+        averageHealth >= 70
+          ? "base monitorada mantém saúde positiva"
+          : "saúde média exige acompanhamento executivo",
+      status: averageHealth >= 70 ? "Verde" : averageHealth >= 50 ? "Amarelo" : "Vermelho",
+      trend: "→",
+    },
+    {
+      area: "Onboarding",
+      metric: `${onboardingAttention.length} conta(s) exigem atenção`,
+      reason:
+        onboardingAttention.length > 0
+          ? "há jornadas com risco, atraso ou baixa evolução"
+          : "jornadas sem alerta crítico no recorte atual",
+      status: onboardingAttention.length >= 3 ? "Vermelho" : onboardingAttention.length > 0 ? "Amarelo" : "Verde",
+      trend: onboardingAttention.length > 0 ? "↑" : "→",
+    },
+    {
+      area: "Feedback",
+      metric: `${negativeFeedbacks.length} sinal(is) negativos ou críticos`,
+      reason:
+        negativeFeedbacks.length > 0
+          ? "feedbacks indicam fricção recorrente"
+          : "sem concentração negativa relevante",
+      status: negativeFeedbacks.length >= 3 ? "Vermelho" : negativeFeedbacks.length > 0 ? "Amarelo" : "Verde",
+      trend: negativeFeedbacks.length > 0 ? "↑" : "→",
+    },
+    {
+      area: "Risco",
+      metric: `${highRiskAccounts.length} conta(s) em alto risco ou crítico`,
+      reason:
+        criticalAccounts.length > 0
+          ? "há conta crítica exigindo ação imediata"
+          : "risco concentrado abaixo do nível crítico",
+      status: criticalAccounts.length > 0 ? "Vermelho" : highRiskAccounts.length > 0 ? "Amarelo" : "Verde",
+      trend: highRiskAccounts.length > 0 ? "↑" : "→",
+    },
+  ];
+};
+
+const buildTodayActions = (
+  priorityAccount: RiskRow | undefined,
+  topOpportunity: RiskRow | undefined,
+  strategicPriorities: string[],
+): TodayAction[] => [
+  {
+    impact: "Retenção e adoção",
+    priority: priorityAccount?.riskLevel ?? "Crítica",
+    status: "Vermelho",
+    title: priorityAccount
+      ? `Mitigar ${priorityAccount.accountName}`
+      : "Mitigar conta mais crítica",
+  },
+  {
+    impact: "Redução de atrito operacional",
+    priority: "Alta",
+    status: "Amarelo",
+    title: strategicPriorities[0] || "Revisar permissões e acessos",
+  },
+  {
+    impact: "Crescimento",
+    priority: "Oportunidade",
+    status: "Verde",
+    title: topOpportunity
+      ? `Expandir ${topOpportunity.accountName}`
+      : "Avaliar oportunidade de expansão",
+  },
+];
+
+const buildImpactSemaphores = (
+  risks: RiskRow[],
+  onboardings: OnboardingsResponse["onboardings"],
+  feedbacks: FeedbackRow[],
+): ImpactSemaphore[] => {
+  const highRiskCount = risks.filter(isHighOrCriticalRisk).length;
+  const onboardingAttention = onboardings.filter(
+    (onboarding) =>
+      normalize(onboarding.risk).includes("alto") ||
+      onboarding.daysInProgress >= 14 ||
+      onboarding.progress < 50,
+  ).length;
+  const averageExpansion = average(
+    risks.map((risk) => opportunityScore(risk.healthScore, risk.riskScore)),
+  );
+  const permissionFeedbacks = feedbacks.filter((feedback) =>
+    normalize(`${feedback.theme} ${feedback.summary} ${feedback.category}`).includes(
+      "permiss",
+    ),
+  ).length;
+
+  return [
+    {
+      area: "Retenção",
+      explanation:
+        highRiskCount > 0
+          ? "redução de risco nas contas críticas e em alto risco"
+          : "manutenção da base saudável monitorada",
+      expectedImpact: highRiskCount > 0 ? "Alto" : "Médio",
+      status: highRiskCount > 0 ? "Verde" : "Amarelo",
+    },
+    {
+      area: "Adoção",
+      explanation:
+        onboardingAttention > 0
+          ? "simplificação de jornadas de onboarding com atenção"
+          : "continuidade da evolução inicial das contas",
+      expectedImpact: onboardingAttention > 0 ? "Alto" : "Médio",
+      status: onboardingAttention > 0 ? "Verde" : "Amarelo",
+    },
+    {
+      area: "Receita / Expansão",
+      explanation: "contas saudáveis prontas para abordagem comercial",
+      expectedImpact: averageExpansion >= 60 ? "Alto" : "Médio",
+      status: averageExpansion >= 60 ? "Verde" : "Amarelo",
+    },
+    {
+      area: "Eficiência Operacional",
+      explanation:
+        permissionFeedbacks > 0
+          ? "redução de retrabalho em permissões e acessos"
+          : "ganho operacional com ações recomendadas",
+      expectedImpact: permissionFeedbacks > 0 ? "Médio" : "Baixo",
+      status: permissionFeedbacks > 0 ? "Amarelo" : "Verde",
+    },
+  ];
 };
 
 export function ExecutiveCenter() {
@@ -260,7 +456,7 @@ export function ExecutiveCenter() {
         value: highRiskAccounts.length,
       },
       {
-        detail: "Contas com Health Score disponível",
+        detail: "Contas com Índice de Saúde disponível",
         label: "Saúde média",
         value: healthAverage,
       },
@@ -301,6 +497,13 @@ export function ExecutiveCenter() {
     [risks],
   );
 
+  const topOpportunity = topOpportunities[0];
+
+  const executivePulse = useMemo(
+    () => buildExecutivePulse(risks, onboardings, feedbacks),
+    [feedbacks, onboardings, risks],
+  );
+
   const trendSignals = useMemo(
     () => buildTrendSignals(risks, onboardings, feedbacks),
     [feedbacks, onboardings, risks],
@@ -309,6 +512,16 @@ export function ExecutiveCenter() {
   const initiativeImpacts = useMemo(
     () => buildInitiativeImpacts(growth.recommendations, highRiskAccounts),
     [growth.recommendations, highRiskAccounts],
+  );
+
+  const todayActions = useMemo(
+    () => buildTodayActions(priorityAccount, topOpportunity, strategicPriorities),
+    [priorityAccount, strategicPriorities, topOpportunity],
+  );
+
+  const impactSemaphores = useMemo(
+    () => buildImpactSemaphores(risks, onboardings, feedbacks),
+    [feedbacks, onboardings, risks],
   );
 
   const noActionConsequence = priorityAccount
@@ -340,6 +553,14 @@ export function ExecutiveCenter() {
 
       <KPIGrid isLoading={isLoading} metrics={metrics} />
 
+      <QuestionBlock eyebrow="Cockpit executivo" title="Pulso Executivo">
+        <ExecutivePulseGrid items={executivePulse} />
+      </QuestionBlock>
+
+      <QuestionBlock eyebrow="Prioridade do dia" title="O que fazer hoje">
+        <TodayActionGrid actions={todayActions} />
+      </QuestionBlock>
+
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <QuestionBlock
           eyebrow="1. O que exige atenção agora?"
@@ -348,7 +569,7 @@ export function ExecutiveCenter() {
           {priorityAccount ? (
             <div className="grid gap-4 md:grid-cols-[0.8fr_1.2fr]">
               <div className="flex flex-wrap gap-2">
-                <Badge>Risk Score {priorityAccount.riskScore}</Badge>
+                <Badge>Índice de Risco {priorityAccount.riskScore}</Badge>
                 <span
                   className={cn(
                     "rounded-md px-2 py-1 text-xs font-medium",
@@ -397,7 +618,7 @@ export function ExecutiveCenter() {
 
         <QuestionBlock
           eyebrow="4. Quem possui maior potencial de expansão?"
-          title="Top Oportunidades de Expansão"
+          title="Principais Oportunidades de Expansão"
         >
           {topOpportunities.length > 0 ? (
             <div className="space-y-3">
@@ -411,7 +632,7 @@ export function ExecutiveCenter() {
                       {opportunity.accountName}
                     </p>
                     <Badge>
-                      Opportunity Score{" "}
+                      Potencial de Expansão{" "}
                       {opportunityScore(
                         opportunity.healthScore,
                         opportunity.riskScore,
@@ -419,7 +640,7 @@ export function ExecutiveCenter() {
                     </Badge>
                   </div>
                   <p className="mt-2 text-sm leading-6 text-zinc-600">
-                    Motivo: Health alto combinado ao risco atual. Próxima ação:{" "}
+                    Motivo: Índice de Saúde alto combinado ao risco atual. Próxima ação:{" "}
                     {opportunity.suggestedAction ||
                       "avaliar expansão comercial com base no contexto da conta."}
                   </p>
@@ -448,10 +669,13 @@ export function ExecutiveCenter() {
       </section>
 
       <QuestionBlock
-        eyebrow="Decision Intelligence"
-        title="Impacto esperado das iniciativas"
+        eyebrow="Inteligência de Decisão"
+        title="Impacto esperado"
       >
-        <InitiativeImpactList initiatives={initiativeImpacts} />
+        <ImpactSemaphoreGrid items={impactSemaphores} />
+        <div className="mt-4">
+          <InitiativeImpactList initiatives={initiativeImpacts} />
+        </div>
       </QuestionBlock>
 
       <IntelligentSummary
@@ -475,6 +699,36 @@ function Badge({ children }: { children: ReactNode }) {
   return (
     <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
       {children}
+    </span>
+  );
+}
+
+function StatusDot({ status }: { status: TrafficStatus }) {
+  const statusClass = {
+    Amarelo: "bg-amber-400 shadow-amber-200",
+    Verde: "bg-emerald-500 shadow-emerald-200",
+    Vermelho: "bg-red-500 shadow-red-200",
+  }[status];
+
+  return (
+    <span
+      className={cn("size-3 rounded-full shadow-[0_0_0_4px]", statusClass)}
+    />
+  );
+}
+
+function StatusPill({ status }: { status: TrafficStatus }) {
+  const statusClass = {
+    Amarelo: "bg-amber-50 text-amber-700",
+    Verde: "bg-emerald-50 text-emerald-700",
+    Vermelho: "bg-red-50 text-red-700",
+  }[status];
+
+  return (
+    <span
+      className={cn("rounded-md px-2 py-1 text-xs font-medium", statusClass)}
+    >
+      {status}
     </span>
   );
 }
@@ -523,6 +777,90 @@ function QuestionBlock({
       </h2>
       <div className="mt-4">{children}</div>
     </section>
+  );
+}
+
+function ExecutivePulseGrid({ items }: { items: ExecutivePulseItem[] }) {
+  return (
+    <div className="grid gap-3 md:grid-cols-5">
+      {items.map((item) => (
+        <article
+          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+          key={item.area}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <StatusDot status={item.status} />
+            <span className="text-lg font-semibold text-zinc-950">
+              {item.trend}
+            </span>
+          </div>
+          <p className="mt-4 text-sm font-semibold text-zinc-950">
+            {item.area}
+          </p>
+          <div className="mt-2">
+            <StatusPill status={item.status} />
+          </div>
+          <p className="mt-3 text-sm font-medium leading-5 text-zinc-700">
+            {item.metric}
+          </p>
+          <p className="mt-2 text-xs leading-5 text-zinc-500">
+            {item.reason}
+          </p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function TodayActionGrid({ actions }: { actions: TodayAction[] }) {
+  return (
+    <div className="grid gap-3 md:grid-cols-3">
+      {actions.map((action) => (
+        <article
+          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+          key={`${action.status}-${action.title}`}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <StatusPill status={action.status} />
+            <StatusDot status={action.status} />
+          </div>
+          <p className="mt-4 text-base font-semibold text-zinc-950">
+            {action.title}
+          </p>
+          <p className="mt-3 text-sm leading-6 text-zinc-600">
+            Prioridade: {action.priority}
+          </p>
+          <p className="text-sm leading-6 text-zinc-600">
+            Impacto: {action.impact}
+          </p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function ImpactSemaphoreGrid({ items }: { items: ImpactSemaphore[] }) {
+  return (
+    <div className="grid gap-3 md:grid-cols-4">
+      {items.map((item) => (
+        <article
+          className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+          key={item.area}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <StatusPill status={item.status} />
+            <StatusDot status={item.status} />
+          </div>
+          <p className="mt-4 text-sm font-semibold text-zinc-950">
+            {item.area}
+          </p>
+          <p className="mt-3 text-sm leading-6 text-zinc-600">
+            Impacto esperado: {item.expectedImpact}
+          </p>
+          <p className="text-xs leading-5 text-zinc-500">{item.explanation}</p>
+        </article>
+      ))}
+    </div>
   );
 }
 

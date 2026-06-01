@@ -417,14 +417,14 @@ export function GrowthCenter() {
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-medium text-zinc-500">
-              Opportunity Intelligence
+              Inteligência de Oportunidade
             </p>
             <h2 className="text-xl font-semibold tracking-tight text-zinc-950">
-              Top Oportunidades
+              Principais Oportunidades
             </h2>
           </div>
           <p className="text-sm text-zinc-500">
-            Opportunity = Health Score - (Risk Score * 0.5)
+            Potencial de Expansão = Índice de Saúde - (Índice de Risco * 0.5)
           </p>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
@@ -443,7 +443,7 @@ export function GrowthCenter() {
                 )}
               </p>
               <p className="mt-2 text-xs text-zinc-500">
-                Health {opportunity.healthScore} | Risk {opportunity.riskScore}
+                Saúde {opportunity.healthScore} | Risco {opportunity.riskScore}
               </p>
             </article>
           ))}
@@ -453,10 +453,10 @@ export function GrowthCenter() {
       <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
         <div>
           <p className="text-sm font-medium text-zinc-500">
-            Expansion Intelligence
+            Inteligência de Oportunidade
           </p>
           <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">
-            Expansion Candidates
+            Candidatos à Expansão
           </h2>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -919,7 +919,7 @@ function buildExpansionCandidates(risks: RiskRow[]): ExpansionCandidate[] {
     {
       action: "Avaliar upgrade comercial com base no contexto da conta.",
       category: "Upgrade de Plano",
-      reason: "Health alto e risco controlado indicam espaço para avanço de plano.",
+      reason: "Índice de Saúde alto e risco controlado indicam espaço para avanço de plano.",
     },
     {
       action: "Mapear necessidade adjacente e propor oferta complementar.",
@@ -946,7 +946,7 @@ function buildExpansionCandidates(risks: RiskRow[]): ExpansionCandidate[] {
       action: risk?.suggestedAction || category.action,
       category: category.category,
       reason: risk
-        ? `${category.reason} Health ${risk.healthScore}, Risk ${risk.riskScore}.`
+        ? `${category.reason} Saúde ${risk.healthScore}, Risco ${risk.riskScore}.`
         : "Sem dados suficientes de risco para classificar candidato.",
       score: risk ? opportunityScore(risk.healthScore, risk.riskScore) : 0,
     };

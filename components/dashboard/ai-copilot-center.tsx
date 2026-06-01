@@ -239,15 +239,15 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
       accounts: opportunities.map((risk) => risk.accountName),
       data: opportunities.map(
         (risk, index) =>
-          `${index + 1}. ${risk.accountName}: Opportunity Score ${accountOpportunityScore(risk)}, Health ${risk.healthScore}, Risk ${risk.riskScore}.`,
+          `${index + 1}. ${risk.accountName}: Potencial de Expansão ${accountOpportunityScore(risk)}, Índice de Saúde ${risk.healthScore}, Índice de Risco ${risk.riskScore}.`,
       ),
       recommendations: opportunities.map(
         (risk) =>
-          `Justificativa: health alto com risco relativo controlado. Ação recomendada: ${risk.suggestedAction || "avaliar expansão comercial."}`,
+          `Justificativa: Índice de Saúde alto com risco relativo controlado. Ação recomendada: ${risk.suggestedAction || "avaliar expansão comercial."}`,
       ),
       summary:
         opportunities.length > 0
-          ? `${opportunities[0].accountName} lidera o ranking de expansão pelo maior Opportunity Score derivado de Health Score e Risk Score.`
+          ? `${opportunities[0].accountName} lidera o ranking de expansão pelo maior Potencial de Expansão derivado de Índice de Saúde e Índice de Risco.`
           : "Nenhuma conta com potencial de expansão foi encontrada nos dados atuais.",
     };
   }
@@ -262,11 +262,11 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
           (row) => row.account === risk.accountName,
         );
 
-        return `${index + 1}. ${risk.accountName}: plano ${account?.plan || "não informado"}, Opportunity Score ${accountOpportunityScore(risk)}.`;
+        return `${index + 1}. ${risk.accountName}: plano ${account?.plan || "não informado"}, Potencial de Expansão ${accountOpportunityScore(risk)}.`;
       }),
       recommendations: candidates.map(
         (risk) =>
-          `Oferta sugerida: avaliar upgrade para ${risk.accountName}. Justificativa: Health ${risk.healthScore}, Risk ${risk.riskScore} e contexto ${risk.mainReason.toLowerCase()}.`,
+          `Oferta sugerida: avaliar upgrade para ${risk.accountName}. Justificativa: Índice de Saúde ${risk.healthScore}, Índice de Risco ${risk.riskScore} e contexto ${risk.mainReason.toLowerCase()}.`,
       ),
       summary:
         candidates.length > 0
@@ -299,7 +299,7 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
           ? ` Onboarding: ${onboarding.progress}% em ${onboarding.daysInProgress} dias.`
           : "";
 
-        return `${risk.accountName}: score ${risk.riskScore}, ${risk.riskLevel}. Motivo: ${risk.mainReason}.${onboardingContext}`;
+        return `${risk.accountName}: Índice de Risco ${risk.riskScore}, ${risk.riskLevel}. Motivo: ${risk.mainReason}.${onboardingContext}`;
       }),
       recommendations: riskyAccounts.map(
         (risk) => `Ação sugerida: ${risk.suggestedAction}`,
@@ -333,7 +333,7 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
       ),
       recommendations: initiatives.map(
         (initiative) =>
-          `Motivo: iniciativa em ${initiative.area} com Opportunity Score ${initiative.opportunityScore}. Próximo passo: transformar em prioridade dos próximos 90 dias.`,
+          `Motivo: iniciativa em ${initiative.area} com Potencial de Expansão ${initiative.opportunityScore}. Próximo passo: transformar em prioridade dos próximos 90 dias.`,
       ),
       summary:
         initiatives.length > 0
@@ -428,7 +428,7 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
         .slice(0, 5),
       data: recommendations.map(
         (recommendation) =>
-          `${recommendation.recommendation}: Índice de Oportunidade (Opportunity Score) ${recommendation.opportunityScore}, prioridade ${recommendation.priority}.`,
+          `${recommendation.recommendation}: Potencial de Expansão ${recommendation.opportunityScore}, prioridade ${recommendation.priority}.`,
       ),
       recommendations: recommendations.map(
         (recommendation) =>
@@ -462,7 +462,7 @@ function buildAnswer(question: string, data: CopilotData): CopilotAnswer {
         `${recommendation.recommendation} (${recommendation.priority}, ${recommendation.estimatedImpact})`,
     ),
     summary:
-      "O Copilot consolidou os módulos do ecossistema KV Partners e está pronto para responder perguntas executivas multi-fonte.",
+      "O Assistente Estratégico consolidou os módulos do ecossistema KV Partners e está pronto para responder perguntas executivas multi-fonte.",
   };
 }
 
@@ -621,7 +621,7 @@ export function AICopilotCenter() {
               Assistente estratégico
             </p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
-              AI Copilot
+              Assistente Estratégico
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
               Faça perguntas executivas sobre contas, onboarding, feedbacks,
@@ -756,7 +756,7 @@ function ExecutiveBriefingPanel({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-sm font-medium text-zinc-500">
-            Executive Briefing
+            Resumo Executivo
           </p>
           <h2 className="mt-2 text-xl font-semibold text-zinc-950">
             Visão executiva consolidada
