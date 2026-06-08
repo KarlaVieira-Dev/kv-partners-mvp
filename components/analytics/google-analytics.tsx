@@ -96,6 +96,8 @@ function GoogleAnalyticsTracker({ measurementId }: Required<GoogleAnalyticsProps
 }
 
 export function GoogleAnalytics({ measurementId }: GoogleAnalyticsProps) {
+  console.log("GA ID", measurementId);
+
   if (!measurementId) {
     return null;
   }
@@ -110,9 +112,9 @@ export function GoogleAnalytics({ measurementId }: GoogleAnalyticsProps) {
       <Script id="google-analytics" strategy="afterInteractive">
         {`
           window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', '${measurementId}', { send_page_view: false });
+          window.gtag = function gtag(){window.dataLayer.push(arguments);}
+          window.gtag('js', new Date());
+          window.gtag('config', '${measurementId}', { send_page_view: false });
         `}
       </Script>
       <Suspense fallback={null}>
