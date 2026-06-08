@@ -45,6 +45,49 @@ Acesse:
 http://localhost:3000
 ```
 
+## Google Analytics 4
+
+O projeto usa GA4 por variavel de ambiente, sem Measurement ID fixo no codigo.
+
+### 1. Onde obter o Measurement ID
+
+No Google Analytics, acesse:
+
+`Admin` -> `Data streams` -> selecione o stream Web -> copie o `Measurement ID`.
+
+O identificador segue o formato:
+
+```bash
+G-XXXXXXXXXX
+```
+
+### 2. Como configurar no Render
+
+No dashboard do Render:
+
+1. Acesse o servico do KV Partners MVP.
+2. Abra `Environment`.
+3. Adicione a variavel:
+
+```bash
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+```
+
+4. Salve e execute `Manual Deploy` -> `Deploy latest commit`.
+
+### 3. Como validar o Analytics
+
+Depois do deploy:
+
+1. Abra o site publicado.
+2. Navegue entre paginas como `/`, `/executive-center` e `/ai-copilot`.
+3. No Google Analytics, acesse `Reports` -> `Realtime`.
+4. Confirme se aparecem usuarios ativos, page views e paginas acessadas.
+
+Tambem e possivel validar pelo navegador em `DevTools` -> `Network`, buscando requisicoes para `googletagmanager.com` ou `google-analytics.com`.
+
+O tracking registra page views, navegacao entre paginas, referrer, tempo de permanencia e permite acompanhar as paginas mais acessadas nos relatorios do GA4.
+
 ## Status
 
 Fundacao tecnica do MVP em construcao.
