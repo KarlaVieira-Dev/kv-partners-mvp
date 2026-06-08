@@ -17,6 +17,7 @@ import type {
   RiskRow,
   RisksResponse,
 } from "@/lib/google-sheets/types";
+import { trackKvEvent } from "@/lib/analytics";
 import {
   FilterBar,
   IntelligentSummary,
@@ -671,6 +672,13 @@ export function AICopilotCenter() {
   }, []);
 
   const answer = useMemo(() => buildAnswer(question, data), [data, question]);
+  const handleQuickQuestionClick = (quickQuestion: string) => {
+    trackKvEvent("strategic_question_click", {
+      page_path: window.location.pathname + window.location.search,
+      question_text: quickQuestion,
+    });
+    setQuestion(quickQuestion);
+  };
   const briefing = useMemo(() => buildExecutiveBriefing(data), [data]);
   const summaryItems = useMemo(() => buildSummaryItems(data), [data]);
   const metrics = useMemo(
@@ -761,7 +769,7 @@ export function AICopilotCenter() {
           <button
             className="rounded-lg border border-zinc-200 bg-white p-4 text-left text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
             key={quickQuestion}
-            onClick={() => setQuestion(quickQuestion)}
+            onClick={() => handleQuickQuestionClick(quickQuestion)}
             type="button"
           >
             <Sparkles className="mb-3 size-4 text-zinc-950" />

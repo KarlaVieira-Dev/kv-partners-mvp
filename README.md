@@ -88,6 +88,16 @@ Tambem e possivel validar pelo navegador em `DevTools` -> `Network`, buscando re
 
 O tracking registra page views, navegacao entre paginas, referrer, tempo de permanencia e permite acompanhar as paginas mais acessadas nos relatorios do GA4.
 
+### Eventos personalizados
+
+A aplicacao tambem envia eventos de interacao para o GA4:
+
+- `center_view`: acesso aos centros principais da plataforma.
+- `strategic_question_click`: clique em pergunta pronta do Assistente Estrategico.
+- `external_link_click`: clique em links externos, quando existirem.
+
+Todos os eventos incluem `source: "kv_partners"` e parametros de contexto como pagina, nome do centro, pergunta ou URL do link.
+
 ## Status
 
 Fundacao tecnica do MVP em construcao.

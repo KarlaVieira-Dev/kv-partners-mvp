@@ -27,7 +27,6 @@ export default function RootLayout({
 }>) {
   const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
-  console.log("GA ID", process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID);
 
   return (
     <html lang="pt-BR" className={cn("font-sans", geistSans.variable)}>
