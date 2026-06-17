@@ -3,11 +3,12 @@ import type { FeedbackRow, FeedbacksResponse } from "@/lib/google-sheets/types";
 
 type SheetRow = Record<string, string>;
 
+// Consolidado: usa apenas GOOGLE_SHEETS_SPREADSHEET_ID
 const spreadsheetId = () =>
   process.env.GOOGLE_SHEETS_SPREADSHEET_ID ??
-  process.env.GOOGLE_SHEETS_ACCOUNTS_SPREADSHEET_ID ??
-  process.env.GOOGLE_SHEETS_EXECUTIVE_CENTER_SPREADSHEET_ID ??
   "1mM_S-RA7TBK6MC04evhv_U9Y31J0izmsgIhPpn8hBUg";
+
+const REVALIDATE_SECONDS = 300; // 5 min — feedbacks são atualizados continuamente
 
 const getCell = (row: SheetRow, keys: string[]) => {
   for (const key of keys) {
@@ -15,7 +16,6 @@ const getCell = (row: SheetRow, keys: string[]) => {
       return row[key].trim();
     }
   }
-
   return "";
 };
 
@@ -24,19 +24,16 @@ const buildSheetCsvUrl = (sheetName: string) => {
     sheet: sheetName,
     tqx: "out:csv",
   });
-
   return `https://docs.google.com/spreadsheets/d/${spreadsheetId()}/gviz/tq?${params.toString()}`;
 };
 
 const readSheet = async (sheetName: string) => {
   const response = await fetch(buildSheetCsvUrl(sheetName), {
-    next: { revalidate: 300 },
+    next: { revalidate: REVALIDATE_SECONDS },
   });
-
   if (!response.ok) {
     throw new Error(`${sheetName} responded with ${response.status}`);
   }
-
   return parseCsvWithMetadata(await response.text()).records;
 };
 
@@ -47,7 +44,6 @@ export async function getFeedbacksFromSheets(): Promise<FeedbacksResponse> {
       source: "not-configured",
     };
   }
-
   try {
     const [accounts, feedbacks] = await Promise.all([
       readSheet("01_Contas"),
@@ -59,11 +55,9 @@ export async function getFeedbacksFromSheets(): Promise<FeedbacksResponse> {
         getCell(account, ["nome conta"]),
       ]),
     );
-
     return {
       feedbacks: feedbacks.map((feedback): FeedbackRow => {
         const accountId = getCell(feedback, ["id conta"]);
-
         return {
           accountId,
           accountName: accountNames.get(accountId) || accountId,
@@ -81,7 +75,6 @@ export async function getFeedbacksFromSheets(): Promise<FeedbacksResponse> {
     };
   } catch (error) {
     console.error("Failed to read KV Partners feedback sheets", error);
-
     return {
       feedbacks: [],
       source: "not-configured",
