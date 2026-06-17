@@ -12,12 +12,11 @@ import type {
 
 type SheetRow = Record<string, string>;
 
-// Consolidado: usa apenas GOOGLE_SHEETS_SPREADSHEET_ID
 const spreadsheetId = () =>
   process.env.GOOGLE_SHEETS_SPREADSHEET_ID ??
   "1mM_S-RA7TBK6MC04evhv_U9Y31J0izmsgIhPpn8hBUg";
 
-const REVALIDATE_SECONDS = 300; // 5 min — dados MGI são atualizados periodicamente
+const REVALIDATE_SECONDS = 300;
 
 const toNumber = (value: string) => {
   const parsed = Number(value.replace(",", ".").replace(/[^\d.-]/g, ""));
@@ -34,10 +33,7 @@ const getCell = (row: SheetRow, keys: string[]) => {
 };
 
 const buildSheetCsvUrl = (sheetName: string) => {
-  const params = new URLSearchParams({
-    sheet: sheetName,
-    tqx: "out:csv",
-  });
+  const params = new URLSearchParams({ sheet: sheetName, tqx: "out:csv" });
   return `https://docs.google.com/spreadsheets/d/${spreadsheetId()}/gviz/tq?${params.toString()}`;
 };
 
@@ -45,9 +41,7 @@ const readSheet = async (sheetName: string) => {
   const response = await fetch(buildSheetCsvUrl(sheetName), {
     next: { revalidate: REVALIDATE_SECONDS },
   });
-  if (!response.ok) {
-    throw new Error(`${sheetName} responded with ${response.status}`);
-  }
+  if (!response.ok) throw new Error(`${sheetName} responded with ${response.status}`);
   return parseCsvWithMetadata(await response.text()).records;
 };
 
@@ -63,30 +57,19 @@ const readOptionalSheet = async (sheetName: string) => {
 const readFirstAvailableSheet = async (sheetNames: string[]) => {
   for (const sheetName of sheetNames) {
     const rows = await readOptionalSheet(sheetName);
-    if (rows.length > 0) {
-      return rows;
-    }
+    if (rows.length > 0) return rows;
   }
   return [];
 };
 
 const buildAccountNames = (accounts: SheetRow[]) =>
-  new Map(
-    accounts.map((account) => [
-      getCell(account, ["id conta"]),
-      getCell(account, ["nome conta"]),
-    ]),
-  );
+  new Map(accounts.map((a) => [getCell(a, ["id conta"]), getCell(a, ["nome conta"])]));
 
-const buildCategoryAccounts = (
-  jtbdRows: SheetRow[],
-  accountNames: Map<string, string>,
-) => {
+const buildCategoryAccounts = (jtbdRows: SheetRow[], accountNames: Map<string, string>) => {
   const categoryAccounts = new Map<string, string>();
   for (const row of jtbdRows) {
     const category = getCell(row, ["categoria job"]);
-    const accountName =
-      accountNames.get(getCell(row, ["id conta"])) || getCell(row, ["id conta"]);
+    const accountName = accountNames.get(getCell(row, ["id conta"])) || getCell(row, ["id conta"]);
     if (category && accountName && !categoryAccounts.has(category)) {
       categoryAccounts.set(category, accountName);
     }
@@ -95,37 +78,16 @@ const buildCategoryAccounts = (
 };
 
 const priorityFromFriction = (friction: string) => {
-  const normalized = friction.toLowerCase();
-  if (normalized.includes("alta")) {
-    return "Alta";
-  }
-  if (normalized.includes("media") || normalized.includes("média")) {
-    return "Media";
-  }
+  const n = friction.toLowerCase();
+  if (n.includes("alta")) return "Alta";
+  if (n.includes("media") || n.includes("média")) return "Media";
   return "Baixa";
 };
 
 const classifyRadar = (text: string): keyof GrowthRadar => {
-  const normalized = text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-  if (
-    normalized.includes("expans") ||
-    normalized.includes("growth") ||
-    normalized.includes("cross") ||
-    normalized.includes("upsell")
-  ) {
-    return "expansion";
-  }
-  if (
-    normalized.includes("eficien") ||
-    normalized.includes("operacional") ||
-    normalized.includes("permiss") ||
-    normalized.includes("autom")
-  ) {
-    return "operationalEfficiency";
-  }
+  const n = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (n.includes("expans") || n.includes("growth") || n.includes("cross") || n.includes("upsell")) return "expansion";
+  if (n.includes("eficien") || n.includes("operacional") || n.includes("permiss") || n.includes("autom")) return "operationalEfficiency";
   return "retention";
 };
 
@@ -137,24 +99,19 @@ const buildRadar = (
   competitiveRadar: GrowthCompetitiveRadarRow[],
   benchmarks: GrowthBenchmarkRow[],
 ) => {
-  const radar: GrowthRadar = {
-    expansion: 0,
-    operationalEfficiency: 0,
-    retention: 0,
-  };
+  const radar: GrowthRadar = { expansion: 0, operationalEfficiency: 0, retention: 0 };
   for (const item of [
-    ...jtbd.map((row) => `${row.job} ${row.category}`),
-    ...insights.map((row) => `${row.insight} ${row.category}`),
-    ...recommendations.map((row) => row.recommendation),
-    ...marketTrends.map((row) => `${row.theme} ${row.category}`),
-    ...competitiveRadar.map((row) => `${row.movement} ${row.category}`),
-    ...benchmarks.map((row) => `${row.metric} ${row.category}`),
+    ...jtbd.map((r) => `${r.job} ${r.category}`),
+    ...insights.map((r) => `${r.insight} ${r.category}`),
+    ...recommendations.map((r) => r.recommendation),
+    ...marketTrends.map((r) => `${r.theme} ${r.category}`),
+    ...competitiveRadar.map((r) => `${r.movement} ${r.category}`),
+    ...benchmarks.map((r) => `${r.metric} ${r.category}`),
   ]) {
     radar[classifyRadar(item)] += 1;
   }
   return radar;
 };
-
 export async function getGrowthFromSheets(): Promise<GrowthResponse> {
   if (!spreadsheetId()) {
     return {
@@ -169,19 +126,29 @@ export async function getGrowthFromSheets(): Promise<GrowthResponse> {
     };
   }
   try {
-    const [
-      accounts,
-      jtbdRows,
-      insightRows,
-      recommendationRows,
-      marketTrendRows,
-      competitiveRadarRows,
-      benchmarkRows,
-    ] =
+    const [accounts, jtbdRows, insightRows, recommendationRows, marketTrendRows, competitiveRadarRows, benchmarkRows] =
       await Promise.all([
         readSheet("01_Contas"),
         readSheet("08_MGI_JTBD"),
         readSheet("09_MGI_Insights"),
         readSheet("10_MGI_Recommendations"),
         readOptionalSheet("11_MGI_Market_Trends"),
-        readOptionalSheet("12_MGI_Competitive_Ra
+        readOptionalSheet("12_MGI_Competitive_Radar"),
+        readFirstAvailableSheet(["13_MGI_Benchmark", "13_MGI_Benchmarks"]),
+      ]);
+
+    const accountNames = buildAccountNames(accounts);
+    const categoryAccounts = buildCategoryAccounts(jtbdRows, accountNames);
+
+    const jtbd: GrowthJtbdRow[] = jtbdRows.map((row) => {
+      const accountId = getCell(row, ["id conta"]);
+      const category = getCell(row, ["categoria job"]);
+      const friction = getCell(row, ["nivel friccao"]);
+      return {
+        accountId,
+        accountName: accountNames.get(accountId) || accountId,
+        category,
+        frequency: jtbdRows.filter((c) => getCell(c, ["categoria job"]) === category).length,
+        id: getCell(row, ["id jtbd"]),
+        impact: getCell(row, ["impacto estimado"]),
+        job:
