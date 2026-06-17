@@ -1,10 +1,6 @@
 // lib/data/mock.repository.ts
 // Implementação em memória do KVRepository — usada para testes.
 // Permite testar qualquer módulo sem depender do Google Sheets.
-//
-// Uso:
-//   import { MockRepository } from "@/lib/data/mock.repository"
-//   initRepository(new MockRepository())
 
 import type { KVRepository } from "./repository.interface";
 import type {
@@ -85,7 +81,7 @@ export class MockRepository implements KVRepository {
     return this.accounts.find((a) => a.id === id) ?? null;
   }
 
-  async getOnboardings(_contaId?: string): Promise<AOOnboardingOutput[]> {
+  async getOnboardings(): Promise<AOOnboardingOutput[]> {
     return [];
   }
 
@@ -97,11 +93,11 @@ export class MockRepository implements KVRepository {
     return this.riskScores.find((r) => r.contaId === contaId) ?? null;
   }
 
-  async getInsights(_contaId?: string): Promise<MGIInsightOutput[]> {
+  async getInsights(): Promise<MGIInsightOutput[]> {
     return [];
   }
 
-  async getRecommendations(_contaId?: string): Promise<MGIRecommendationOutput[]> {
+  async getRecommendations(): Promise<MGIRecommendationOutput[]> {
     return [];
   }
 }
