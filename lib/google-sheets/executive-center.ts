@@ -3,6 +3,7 @@ import type {
   ExecutiveAccountRow,
   ExecutiveAccountsResponse,
 } from "@/lib/google-sheets/types";
+import { IOI_RISK_THRESHOLDS } from "@/lib/constants/ioi";
 
 export const productIntelligenceModules = [
   "Account Onboarding",
@@ -19,14 +20,11 @@ const executiveSheets = {
 };
 
 type SheetRow = Record<string, string>;
-
 type SheetReadDebug = NonNullable<ExecutiveAccountsResponse["debug"]>["sheets"][number];
-
 type SheetReadResult = {
   debug: SheetReadDebug;
   rows: SheetRow[];
 };
-
 type AccountAccumulator = {
   id: string;
   account: string;
@@ -54,7 +52,6 @@ const getCell = (row: SheetRow, keys: string[]) => {
       return row[key].trim();
     }
   }
-
   return "";
 };
 
@@ -107,9 +104,7 @@ const getStatus = (row: SheetRow) =>
   ]);
 
 const getPlan = (row: SheetRow) => getCell(row, ["plano", "plan"]);
-
 const getCity = (row: SheetRow) => getCell(row, ["cidade", "city"]);
-
 const getState = (row: SheetRow) => getCell(row, ["estado", "state", "uf"]);
 
 const getHealthScore = (row: SheetRow) =>
@@ -177,17 +172,14 @@ const deriveStatus = (account: AccountAccumulator) => {
   if (account.status) {
     return account.status;
   }
-
   const riskScore = account.riskScore ?? riskFromHealth(account.healthScore ?? 0);
-
-  if (riskScore >= 70) {
+  // Alinhado com IOI_RISK_THRESHOLDS.ALTO — contas com risco Alto ou Crítico
+  if (riskScore >= IOI_RISK_THRESHOLDS.ALTO.min) {
     return "Em risco";
   }
-
   if ((account.healthScore ?? 0) >= 85) {
     return "Expansao potencial";
   }
-
   return "Monitoramento ativo";
 };
 
@@ -199,20 +191,16 @@ const upsertAccount = (
   const accountId = getAccountId(row);
   const accountName = getAccountName(row);
   const lookupKeys = [accountId, accountName].filter(Boolean);
-
   for (const lookupKey of lookupKeys) {
     const canonicalKey = aliases.get(lookupKey) ?? lookupKey;
     const existing = accountsByKey.get(canonicalKey);
-
     if (existing) {
       return existing;
     }
   }
-
   if (!accountName && !accountId) {
     return null;
   }
-
   const canonicalKey = accountId || accountName;
   const account: AccountAccumulator = {
     id: accountId,
@@ -227,13 +215,10 @@ const upsertAccount = (
     mainReason: "",
     suggestedAction: "",
   };
-
   accountsByKey.set(canonicalKey, account);
-
   for (const lookupKey of lookupKeys) {
     aliases.set(lookupKey, canonicalKey);
   }
-
   return account;
 };
 
@@ -243,16 +228,13 @@ const findAccount = (
   row: SheetRow,
 ) => {
   const lookupKeys = [getAccountId(row), getAccountName(row)].filter(Boolean);
-
   for (const lookupKey of lookupKeys) {
     const canonicalKey = aliases.get(lookupKey) ?? lookupKey;
     const account = accountsByKey.get(canonicalKey);
-
     if (account) {
       return account;
     }
   }
-
   return null;
 };
 
@@ -264,11 +246,9 @@ const applyPrimaryAccounts = (
   for (const row of rows) {
     const account = upsertAccount(accountsByKey, aliases, row);
     const healthScore = getHealthScore(row);
-
     if (!account) {
       continue;
     }
-
     account.type = getAccountType(row) || account.type;
     account.segment = getSegment(row) || account.segment;
     account.size = getSize(row) || account.size;
@@ -276,17 +256,15 @@ const applyPrimaryAccounts = (
     account.plan = getPlan(row) || account.plan;
     account.city = getCity(row) || account.city;
     account.state = getState(row) || account.state;
-
     if (healthScore !== undefined) {
       account.healthScore = healthScore;
     }
   }
 };
 
+// Consolidado: usa apenas GOOGLE_SHEETS_SPREADSHEET_ID
 const spreadsheetId = () =>
   process.env.GOOGLE_SHEETS_SPREADSHEET_ID ??
-  process.env.GOOGLE_SHEETS_ACCOUNTS_SPREADSHEET_ID ??
-  process.env.GOOGLE_SHEETS_EXECUTIVE_CENTER_SPREADSHEET_ID ??
   "1mM_S-RA7TBK6MC04evhv_U9Y31J0izmsgIhPpn8hBUg";
 
 const buildGoogleSheetsCsvUrl = ({
@@ -297,25 +275,20 @@ const buildGoogleSheetsCsvUrl = ({
   sheetName?: string;
 }) => {
   const id = spreadsheetId();
-
   if (!id) {
     return null;
   }
-
   if (gid) {
     const params = new URLSearchParams({ format: "csv", gid });
     return `https://docs.google.com/spreadsheets/d/${id}/export?${params.toString()}`;
   }
-
   if (sheetName) {
     const params = new URLSearchParams({
       sheet: sheetName,
       tqx: "out:csv",
     });
-
     return `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?${params.toString()}`;
   }
-
   return null;
 };
 
@@ -327,19 +300,15 @@ const readSheet = async (
     sheet: sheetName,
     attempts: [],
   };
-
   for (const attempt of attempts) {
     const csvUrl = buildGoogleSheetsCsvUrl(attempt);
-
     if (!csvUrl) {
       continue;
     }
-
     try {
       const response = await fetch(csvUrl, {
         next: { revalidate: 300 },
       });
-
       if (!response.ok) {
         debug.attempts.push({
           error: `HTTP ${response.status}`,
@@ -351,9 +320,7 @@ const readSheet = async (
         });
         continue;
       }
-
       const parsed = parseCsvWithMetadata(await response.text());
-
       debug.attempts.push({
         headers: parsed.headers,
         normalizedHeaders: parsed.normalizedHeaders,
@@ -361,7 +328,6 @@ const readSheet = async (
         status: response.status,
         url: csvUrl,
       });
-
       if (parsed.records.length > 0) {
         return {
           debug,
@@ -378,7 +344,6 @@ const readSheet = async (
       });
     }
   }
-
   return {
     debug,
     rows: [],
@@ -394,18 +359,14 @@ const applyIoiScores = (
     const account = findAccount(accountsByKey, aliases, row);
     const healthScore = getHealthScore(row);
     const riskScore = getRiskScore(row);
-
     if (!account) {
       continue;
     }
-
     account.type ||= getAccountType(row);
     account.status ||= getStatus(row);
-
     if (healthScore !== undefined) {
       account.healthScore = healthScore;
     }
-
     if (riskScore !== undefined) {
       account.riskScore = riskScore;
     }
@@ -420,19 +381,14 @@ const applyMgiInsights = (
   for (const row of rows) {
     const account = findAccount(accountsByKey, aliases, row);
     const insight = getInsightText(row);
-    const riskScore = getRiskScore(row);
-
     if (!account) {
       continue;
     }
-
+    // MGI fornece apenas insights e recomendações.
+    // Risk score vem exclusivamente do IOI (applyIoiScores).
     account.type ||= getAccountType(row);
     account.status ||= getStatus(row);
     account.mainReason ||= insight;
-
-    if (riskScore !== undefined) {
-      account.riskScore = Math.max(account.riskScore ?? 0, riskScore);
-    }
   }
 };
 
@@ -444,11 +400,9 @@ const applyMgiRecommendations = (
   for (const row of rows) {
     const account = findAccount(accountsByKey, aliases, row);
     const recommendation = getRecommendationText(row);
-
     if (!account) {
       continue;
     }
-
     account.type ||= getAccountType(row);
     account.status ||= getStatus(row);
     account.suggestedAction ||= recommendation;
@@ -460,7 +414,6 @@ const toExecutiveAccount = (
 ): ExecutiveAccountRow => {
   const healthScore = account.healthScore ?? 0;
   const riskScore = account.riskScore ?? riskFromHealth(healthScore);
-
   return {
     account: account.account,
     city: account.city,
@@ -485,7 +438,6 @@ export async function getExecutiveAccountsFromSheets(): Promise<ExecutiveAccount
       modules: productIntelligenceModules,
     };
   }
-
   const [accountsSheet, ioiScoresSheet, mgiInsightsSheet, recommendationsSheet] =
     await Promise.all([
       readSheet(executiveSheets.accounts, [
@@ -502,6 +454,7 @@ export async function getExecutiveAccountsFromSheets(): Promise<ExecutiveAccount
         { sheetName: executiveSheets.mgiRecommendations },
       ]),
     ]);
+
   const accountsByKey = new Map<string, AccountAccumulator>();
   const aliases = new Map<string, string>();
 
