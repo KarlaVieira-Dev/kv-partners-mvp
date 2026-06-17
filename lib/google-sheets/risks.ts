@@ -1,13 +1,17 @@
 import { parseCsvWithMetadata } from "@/lib/google-sheets/csv";
 import type { RiskRow, RisksResponse } from "@/lib/google-sheets/types";
+import type { RiskLevel } from "@/lib/constants/ioi";
 
 type SheetRow = Record<string, string>;
 
+// Consolidado: usa apenas GOOGLE_SHEETS_SPREADSHEET_ID
+// As variáveis ACCOUNTS e EXECUTIVE_CENTER foram descontinuadas
 const spreadsheetId = () =>
   process.env.GOOGLE_SHEETS_SPREADSHEET_ID ??
-  process.env.GOOGLE_SHEETS_ACCOUNTS_SPREADSHEET_ID ??
-  process.env.GOOGLE_SHEETS_EXECUTIVE_CENTER_SPREADSHEET_ID ??
   "1mM_S-RA7TBK6MC04evhv_U9Y31J0izmsgIhPpn8hBUg";
+
+// Scores IOI são atualizados diariamente — 5 min de cache é suficiente
+const REVALIDATE_SECONDS = 300;
 
 const toNumber = (value: string) => {
   const parsed = Number(value.replace(",", ".").replace(/[^\d.-]/g, ""));
@@ -20,7 +24,6 @@ const getCell = (row: SheetRow, keys: string[]) => {
       return row[key].trim();
     }
   }
-
   return "";
 };
 
@@ -29,13 +32,12 @@ const buildSheetCsvUrl = (sheetName: string) => {
     sheet: sheetName,
     tqx: "out:csv",
   });
-
   return `https://docs.google.com/spreadsheets/d/${spreadsheetId()}/gviz/tq?${params.toString()}`;
 };
 
 const readSheet = async (sheetName: string) => {
   const response = await fetch(buildSheetCsvUrl(sheetName), {
-    next: { revalidate: 300 },
+    next: { revalidate: REVALIDATE_SECONDS },
   });
 
   if (!response.ok) {
@@ -58,6 +60,7 @@ export async function getRisksFromSheets(): Promise<RisksResponse> {
       readSheet("01_Contas"),
       readSheet("07_IOI_Scores"),
     ]);
+
     const accountsById = new Map(
       accounts.map((account) => [getCell(account, ["id conta"]), account]),
     );
@@ -78,7 +81,7 @@ export async function getRisksFromSheets(): Promise<RisksResponse> {
           healthScore: toNumber(getCell(score, ["health score"])),
           mainReason: getCell(score, ["motivo principal"]),
           onboardingScore: toNumber(getCell(score, ["onboarding score"])),
-          riskLevel: getCell(score, ["nivel risco"]),
+          riskLevel: getCell(score, ["nivel risco"]) as RiskLevel,
           riskScore: toNumber(getCell(score, ["risk score"])),
           suggestedAction: getCell(score, ["acao sugerida"]),
           usageScore: toNumber(getCell(score, ["usage score"])),
