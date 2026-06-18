@@ -50,7 +50,7 @@ const badgeColor = (value: string) => {
     normalized.includes("alta") ||
     normalized.includes("abaixo")
   ) {
-    return "bg-rose-50 text-rose-700";
+    return "bg-rose-950/40 text-rose-400 border border-rose-500/20";
   }
 
   if (
@@ -58,10 +58,10 @@ const badgeColor = (value: string) => {
     normalized.includes("planejada") ||
     normalized.includes("estavel")
   ) {
-    return "bg-amber-50 text-amber-700";
+    return "bg-amber-950/40 text-amber-400 border border-amber-500/20";
   }
 
-  return "bg-emerald-50 text-emerald-700";
+  return "bg-emerald-950/40 text-emerald-400 border border-emerald-500/20";
 };
 
 const sourceLabel = (source: GrowthResponse["source"]) =>
@@ -454,7 +454,7 @@ export function GrowthCenter() {
         <div className="mt-5 grid gap-3 md:grid-cols-3">
           {topOpportunities.map((opportunity) => (
             <article
-              className="rounded-lg border border-zinc-100 bg-[#0c1120] p-4"
+              className="rounded-lg border border-white/10 bg-[#0c1120] p-4"
               key={opportunity.accountId}
             >
               <p className="text-sm font-semibold text-white">
@@ -486,7 +486,7 @@ export function GrowthCenter() {
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {expansionCandidates.map((candidate) => (
             <article
-              className="rounded-lg border border-zinc-100 bg-[#0c1120] p-4"
+              className="rounded-lg border border-white/10 bg-[#0c1120] p-4"
               key={`${candidate.category}-${candidate.accountName}`}
             >
               <p className="text-xs font-medium text-zinc-400">
@@ -501,7 +501,7 @@ export function GrowthCenter() {
               <p className="mt-2 text-xs leading-5 text-zinc-400">
                 {candidate.reason}
               </p>
-              <p className="mt-3 text-xs font-medium text-zinc-700">
+              <p className="mt-3 text-xs font-medium text-zinc-400">
                 {candidate.action}
               </p>
             </article>
@@ -526,7 +526,7 @@ export function GrowthCenter() {
         <div className="mt-5 grid gap-3 lg:grid-cols-3">
           {recommendedOffers.map((offer) => (
             <article
-              className="rounded-lg border border-zinc-100 bg-[#0c1120] p-4"
+              className="rounded-lg border border-white/10 bg-[#0c1120] p-4"
               key={offer.accountName}
             >
               <p className="text-sm font-semibold text-white">
@@ -925,7 +925,7 @@ function FilterSelect({
     <label className="flex flex-col gap-1 text-xs font-medium text-zinc-400">
       {label}
       <select
-        className="h-10 rounded-lg border border-white/10 bg-[#0c1120] px-3 text-sm font-normal text-zinc-900 outline-none transition focus:border-zinc-400"
+        className="h-10 rounded-lg border border-white/10 bg-[#0c1120] px-3 text-sm font-normal text-white outline-none transition focus:border-zinc-500"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
