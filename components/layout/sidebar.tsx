@@ -26,7 +26,7 @@ const icons = [
 export function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-zinc-200 bg-white/90 px-4 py-5 backdrop-blur-xl lg:block">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-white/10 bg-[#050810]/90 px-4 py-5 backdrop-blur-xl lg:block">
       <div className="flex h-full flex-col">
         <div className="mb-8 flex items-center gap-3 px-2">
           <div
@@ -46,7 +46,7 @@ export function Sidebar() {
             </svg>
           </div>
           <div>
-            <p className="text-sm font-semibold text-zinc-950">KV Partners</p>
+            <p className="text-sm font-semibold text-white">KV Partners</p>
             <p className="text-xs italic" style={{ color: "#a78bfa" }}>
               Intelligence Platform
             </p>
@@ -61,8 +61,8 @@ export function Sidebar() {
                 className={cn(
                   "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition",
                   active
-                    ? "bg-zinc-950 text-white shadow-sm"
-                    : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950",
+                    ? "bg-[#2563eb] text-white shadow-sm"
+                    : "text-zinc-400 hover:bg-[#111827] hover:text-white",
                 )}
                 href={item.href}
                 key={item.label}
@@ -73,14 +73,14 @@ export function Sidebar() {
             );
           })}
         </nav>
-        <div className="mt-auto rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+        <div className="mt-auto rounded-lg border border-white/10 bg-[#0c1120] p-4">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
             Status do MVP
           </p>
-          <p className="mt-2 text-sm font-semibold text-zinc-950">
+          <p className="mt-2 text-sm font-semibold text-white">
             Fundação pronta
           </p>
-          <p className="mt-1 text-xs leading-5 text-zinc-500">
+          <p className="mt-1 text-xs leading-5 text-zinc-400">
             Dados reais do Google Sheets alimentam os módulos principais.
           </p>
         </div>

@@ -715,23 +715,23 @@ export function AICopilotCenter() {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
-      <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-medium text-zinc-500">
+            <p className="text-sm font-medium text-zinc-400">
               Assistente estratégico
             </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               Assistente Estratégico
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
               Faça perguntas executivas sobre contas, onboarding, feedbacks,
               riscos, JTBD, insights, recomendações, tendências, concorrentes e
               benchmarks da KV Partners.
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
-            <Bot className="size-4 text-zinc-950" />
+          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0c1120] px-3 py-2 text-sm text-zinc-400">
+            <Bot className="size-4 text-white" />
             {isLoading ? "Carregando contexto" : "Motor de regras ativo"}
           </div>
         </div>
@@ -744,13 +744,13 @@ export function AICopilotCenter() {
       <FilterBar>
         <div className="w-full">
           <label
-            className="text-sm font-medium text-zinc-500"
+            className="text-sm font-medium text-zinc-400"
             htmlFor="question"
           >
             Pergunta estratégica
           </label>
           <div className="mt-2 flex flex-col gap-3 sm:flex-row">
-            <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
+            <div className="flex min-w-0 flex-1 items-center rounded-lg border border-white/10 bg-[#0c1120] px-3">
               <Search className="size-4 text-zinc-400" />
               <input
                 className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
@@ -767,19 +767,19 @@ export function AICopilotCenter() {
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {quickQuestions.map((quickQuestion) => (
           <button
-            className="rounded-lg border border-zinc-200 bg-white p-4 text-left text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
+            className="rounded-lg border border-white/10 bg-[#050810] p-4 text-left text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-[#0c1120]"
             key={quickQuestion}
             onClick={() => handleQuickQuestionClick(quickQuestion)}
             type="button"
           >
-            <Sparkles className="mb-3 size-4 text-zinc-950" />
+            <Sparkles className="mb-3 size-4 text-white" />
             {quickQuestion}
           </button>
         ))}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-        <div className="rounded-lg border border-zinc-200 bg-zinc-950 p-5 text-white shadow-sm">
+        <div className="rounded-lg border border-white/10 bg-[#2563eb] p-5 text-white shadow-sm">
           <p className="text-sm font-medium text-zinc-400">
             Resposta executiva
           </p>
@@ -788,15 +788,15 @@ export function AICopilotCenter() {
           </p>
         </div>
 
-        <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-zinc-500">
+        <div className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm">
+          <p className="text-sm font-medium text-zinc-400">
             Contas relacionadas
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {(answer.accounts.length > 0 ? answer.accounts : ["Sem contas"]).map(
               (account, index) => (
                 <span
-                  className="rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700"
+                  className="rounded-md bg-[#111827] px-2.5 py-1 text-xs font-medium text-zinc-700"
                   key={`${account}-${index}`}
                 >
                   {account}
@@ -853,21 +853,21 @@ function ExecutiveBriefingPanel({
   ];
 
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+    <section className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm font-medium text-zinc-500">
+          <p className="text-sm font-medium text-zinc-400">
             Resumo Executivo
           </p>
-          <h2 className="mt-2 text-xl font-semibold text-zinc-950">
+          <h2 className="mt-2 text-xl font-semibold text-white">
             Visão executiva consolidada
           </h2>
         </div>
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 lg:max-w-md">
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
+        <div className="rounded-lg border border-white/10 bg-[#0c1120] p-4 lg:max-w-md">
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-400">
             Recomendação Principal
           </p>
-          <p className="mt-2 text-sm font-semibold leading-6 text-zinc-950">
+          <p className="mt-2 text-sm font-semibold leading-6 text-white">
             {isLoading ? "Carregando recomendação..." : briefing.mainRecommendation}
           </p>
         </div>
@@ -875,11 +875,11 @@ function ExecutiveBriefingPanel({
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         {items.map((item) => (
           <div
-            className="rounded-lg border border-zinc-100 bg-zinc-50 p-3"
+            className="rounded-lg border border-zinc-100 bg-[#0c1120] p-3"
             key={item.label}
           >
-            <p className="text-xs text-zinc-500">{item.label}</p>
-            <p className="mt-1 text-2xl font-semibold text-zinc-950">
+            <p className="text-xs text-zinc-400">{item.label}</p>
+            <p className="mt-1 text-2xl font-semibold text-white">
               {isLoading ? "..." : item.value}
             </p>
           </div>
@@ -891,14 +891,14 @@ function ExecutiveBriefingPanel({
 
 function AnswerList({ items, title }: { items: string[]; title: string }) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white shadow-sm">
-      <div className="border-b border-zinc-200 px-5 py-4">
-        <h2 className="text-base font-semibold text-zinc-950">{title}</h2>
+    <div className="rounded-lg border border-white/10 bg-[#050810] shadow-sm">
+      <div className="border-b border-white/10 px-5 py-4">
+        <h2 className="text-base font-semibold text-white">{title}</h2>
       </div>
       <div className="divide-y divide-zinc-100">
         {(items.length > 0 ? items : ["Nenhum dado encontrado."]).map(
           (item, index) => (
-            <p className="px-5 py-4 text-sm leading-6 text-zinc-600" key={index}>
+            <p className="px-5 py-4 text-sm leading-6 text-zinc-400" key={index}>
               {item}
             </p>
           ),

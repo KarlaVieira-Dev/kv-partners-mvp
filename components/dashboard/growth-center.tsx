@@ -412,22 +412,22 @@ export function GrowthCenter() {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
-      <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-medium text-zinc-500">
+            <p className="text-sm font-medium text-zinc-400">
               Inteligência de Mercado e Crescimento
             </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               Centro de Crescimento
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
               Hub estratégico para consolidar JTBD, insights, recomendações,
               tendências de mercado, radar competitivo e benchmarks.
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
-            <Radar className="size-4 text-zinc-950" />
+          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0c1120] px-3 py-2 text-sm text-zinc-400">
+            <Radar className="size-4 text-white" />
             {isLoading
               ? "Carregando dados de crescimento"
               : sourceLabel(growth.source)}
@@ -437,36 +437,36 @@ export function GrowthCenter() {
 
       <KPIGrid isLoading={isLoading} metrics={metrics} />
 
-      <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-medium text-zinc-500">
+            <p className="text-sm font-medium text-zinc-400">
               Inteligência de Oportunidade
             </p>
-            <h2 className="text-xl font-semibold tracking-tight text-zinc-950">
+            <h2 className="text-xl font-semibold tracking-tight text-white">
               Principais Oportunidades
             </h2>
           </div>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-zinc-400">
             Potencial de Expansão = Índice de Saúde - (Índice de Risco * 0.5)
           </p>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
           {topOpportunities.map((opportunity) => (
             <article
-              className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+              className="rounded-lg border border-zinc-100 bg-[#0c1120] p-4"
               key={opportunity.accountId}
             >
-              <p className="text-sm font-semibold text-zinc-950">
+              <p className="text-sm font-semibold text-white">
                 {opportunity.accountName}
               </p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950">
+              <p className="mt-3 text-3xl font-semibold tracking-tight text-white">
                 {opportunityScore(
                   opportunity.healthScore,
                   opportunity.riskScore,
                 )}
               </p>
-              <p className="mt-2 text-xs text-zinc-500">
+              <p className="mt-2 text-xs text-zinc-400">
                 Saúde {opportunity.healthScore} | Risco {opportunity.riskScore}
               </p>
             </article>
@@ -474,31 +474,31 @@ export function GrowthCenter() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm">
         <div>
-          <p className="text-sm font-medium text-zinc-500">
+          <p className="text-sm font-medium text-zinc-400">
             Inteligência de Oportunidade
           </p>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">
+          <h2 className="mt-2 text-xl font-semibold tracking-tight text-white">
             Candidatos à Expansão
           </h2>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {expansionCandidates.map((candidate) => (
             <article
-              className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+              className="rounded-lg border border-zinc-100 bg-[#0c1120] p-4"
               key={`${candidate.category}-${candidate.accountName}`}
             >
-              <p className="text-xs font-medium text-zinc-500">
+              <p className="text-xs font-medium text-zinc-400">
                 {candidate.category}
               </p>
-              <p className="mt-2 text-sm font-semibold text-zinc-950">
+              <p className="mt-2 text-sm font-semibold text-white">
                 {candidate.accountName}
               </p>
-              <p className="mt-3 text-2xl font-semibold tracking-tight text-zinc-950">
+              <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
                 {candidate.score}
               </p>
-              <p className="mt-2 text-xs leading-5 text-zinc-500">
+              <p className="mt-2 text-xs leading-5 text-zinc-400">
                 {candidate.reason}
               </p>
               <p className="mt-3 text-xs font-medium text-zinc-700">
@@ -509,48 +509,48 @@ export function GrowthCenter() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-medium text-zinc-500">
+            <p className="text-sm font-medium text-zinc-400">
               O que vender para quem?
             </p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-white">
               Ofertas Recomendadas
             </h2>
           </div>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-zinc-400">
             Baseado nas Top 3 contas por Potencial de Expansão.
           </p>
         </div>
         <div className="mt-5 grid gap-3 lg:grid-cols-3">
           {recommendedOffers.map((offer) => (
             <article
-              className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+              className="rounded-lg border border-zinc-100 bg-[#0c1120] p-4"
               key={offer.accountName}
             >
-              <p className="text-sm font-semibold text-zinc-950">
+              <p className="text-sm font-semibold text-white">
                 {offer.accountName}
               </p>
-              <p className="mt-3 text-2xl font-semibold tracking-tight text-zinc-950">
+              <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
                 {offer.score}
               </p>
-              <p className="text-xs text-zinc-500">Potencial de Expansão</p>
-              <div className="mt-4 space-y-2 text-sm leading-6 text-zinc-600">
+              <p className="text-xs text-zinc-400">Potencial de Expansão</p>
+              <div className="mt-4 space-y-2 text-sm leading-6 text-zinc-400">
                 <p>
-                  <strong className="text-zinc-950">Oferta:</strong>{" "}
+                  <strong className="text-white">Oferta:</strong>{" "}
                   {offer.offer}
                 </p>
                 <p>
-                  <strong className="text-zinc-950">Probabilidade:</strong>{" "}
+                  <strong className="text-white">Probabilidade:</strong>{" "}
                   {offer.probability}
                 </p>
                 <p>
-                  <strong className="text-zinc-950">Impacto esperado:</strong>{" "}
+                  <strong className="text-white">Impacto esperado:</strong>{" "}
                   {offer.expectedImpact}
                 </p>
                 <p>
-                  <strong className="text-zinc-950">Próxima ação:</strong>{" "}
+                  <strong className="text-white">Próxima ação:</strong>{" "}
                   {offer.nextAction}
                 </p>
               </div>
@@ -562,7 +562,7 @@ export function GrowthCenter() {
       <DataTable
         columns={[
           {
-            className: "max-w-[360px] font-medium text-zinc-950",
+            className: "max-w-[360px] font-medium text-white",
             header: "Iniciativa",
             render: (row) => row.initiative,
           },
@@ -608,7 +608,7 @@ export function GrowthCenter() {
       <DataTable
         columns={[
           {
-            className: "max-w-[360px] font-medium text-zinc-950",
+            className: "max-w-[360px] font-medium text-white",
             header: "Job",
             render: (row) => row.job,
           },
@@ -635,7 +635,7 @@ export function GrowthCenter() {
       <DataTable
         columns={[
           {
-            className: "max-w-[360px] font-medium text-zinc-950",
+            className: "max-w-[360px] font-medium text-white",
             header: "Insight",
             render: (row) => row.insight,
           },
@@ -660,7 +660,7 @@ export function GrowthCenter() {
       <DataTable
         columns={[
           {
-            className: "max-w-[360px] font-medium text-zinc-950",
+            className: "max-w-[360px] font-medium text-white",
             header: "Recomendação",
             render: (row) => row.recommendation,
           },
@@ -712,7 +712,7 @@ export function GrowthCenter() {
       <DataTable
         columns={[
           {
-            className: "font-medium text-zinc-950",
+            className: "font-medium text-white",
             header: "Tema",
             render: (row) => row.theme,
           },
@@ -765,7 +765,7 @@ export function GrowthCenter() {
       <DataTable
         columns={[
           {
-            className: "font-medium text-zinc-950",
+            className: "font-medium text-white",
             header: "Concorrente",
             render: (row) => row.competitor,
           },
@@ -819,7 +819,7 @@ export function GrowthCenter() {
       <DataTable
         columns={[
           {
-            className: "font-medium text-zinc-950",
+            className: "font-medium text-white",
             header: "Métrica",
             render: (row) => row.metric,
           },
@@ -853,7 +853,7 @@ export function GrowthCenter() {
       <DataTable
         columns={[
           {
-            className: "font-medium text-zinc-950",
+            className: "font-medium text-white",
             header: "Área",
             render: (row) => row.area,
           },
@@ -903,9 +903,9 @@ function Badge({ value }: { value: string }) {
 
 function FilterLabel({ text }: { text: string }) {
   return (
-    <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
+    <div className="flex min-w-0 flex-1 items-center rounded-lg border border-white/10 bg-[#0c1120] px-3">
       <Search className="size-4 text-zinc-400" />
-      <span className="px-3 text-sm text-zinc-500">{text}</span>
+      <span className="px-3 text-sm text-zinc-400">{text}</span>
     </div>
   );
 }
@@ -922,10 +922,10 @@ function FilterSelect({
   value: string;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-xs font-medium text-zinc-500">
+    <label className="flex flex-col gap-1 text-xs font-medium text-zinc-400">
       {label}
       <select
-        className="h-10 rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm font-normal text-zinc-900 outline-none transition focus:border-zinc-400"
+        className="h-10 rounded-lg border border-white/10 bg-[#0c1120] px-3 text-sm font-normal text-zinc-900 outline-none transition focus:border-zinc-400"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >

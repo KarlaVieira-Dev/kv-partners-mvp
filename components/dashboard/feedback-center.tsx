@@ -198,22 +198,22 @@ export function FeedbackCenter() {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
-      <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-medium text-zinc-500">
+            <p className="text-sm font-medium text-zinc-400">
               Inteligencia de Feedbacks
             </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               Centro de Feedbacks
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
               Acompanhe sentimento, prioridade, temas recorrentes e status de
               resolução dos feedbacks por conta.
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
-            <MessageSquareText className="size-4 text-zinc-950" />
+          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0c1120] px-3 py-2 text-sm text-zinc-400">
+            <MessageSquareText className="size-4 text-white" />
             {isLoading ? "Carregando feedbacks" : `${filteredFeedbacks.length} registros`}
           </div>
         </div>
@@ -230,18 +230,18 @@ export function FeedbackCenter() {
           items={priorityDistribution}
           title="Distribuição por Prioridade"
         />
-        <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-zinc-500">Temas Recorrentes</p>
+        <div className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm">
+          <p className="text-sm font-medium text-zinc-400">Temas Recorrentes</p>
           <div className="mt-4 space-y-2">
             {recurringThemes.map(([theme, count]) => (
               <div
-                className="flex items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2"
+                className="flex items-center justify-between rounded-lg border border-zinc-100 bg-[#0c1120] px-3 py-2"
                 key={theme}
               >
                 <span className="text-sm font-medium text-zinc-700">
                   {theme}
                 </span>
-                <span className="text-sm text-zinc-500">{count}</span>
+                <span className="text-sm text-zinc-400">{count}</span>
               </div>
             ))}
           </div>
@@ -249,7 +249,7 @@ export function FeedbackCenter() {
       </section>
 
       <FilterBar>
-          <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
+          <div className="flex min-w-0 flex-1 items-center rounded-lg border border-white/10 bg-[#0c1120] px-3">
             <Search className="size-4 text-zinc-400" />
             <select
               aria-label="Filtrar por conta"
@@ -290,7 +290,7 @@ export function FeedbackCenter() {
         columns={[
           { header: "Data", render: (feedback) => feedback.date },
           {
-            className: "font-medium text-zinc-950",
+            className: "font-medium text-white",
             header: "Conta",
             render: (feedback) => feedback.accountName,
           },
@@ -366,13 +366,13 @@ function DistributionCard({
   title: string;
 }) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-      <p className="text-sm font-medium text-zinc-500">{title}</p>
+    <div className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm">
+      <p className="text-sm font-medium text-zinc-400">{title}</p>
       <div className="mt-4 grid grid-cols-3 gap-3">
         {items.map((item) => (
-          <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3" key={item.label}>
-            <p className="text-xs text-zinc-500">{item.label}</p>
-            <p className="mt-1 text-2xl font-semibold text-zinc-950">
+          <div className="rounded-lg border border-zinc-100 bg-[#0c1120] p-3" key={item.label}>
+            <p className="text-xs text-zinc-400">{item.label}</p>
+            <p className="mt-1 text-2xl font-semibold text-white">
               {item.value}
             </p>
           </div>
@@ -394,10 +394,10 @@ function FilterSelect({
   value: string;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-xs font-medium text-zinc-500">
+    <label className="flex flex-col gap-1 text-xs font-medium text-zinc-400">
       {label}
       <select
-        className="h-10 rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm font-normal text-zinc-900 outline-none transition focus:border-zinc-400"
+        className="h-10 rounded-lg border border-white/10 bg-[#0c1120] px-3 text-sm font-normal text-zinc-900 outline-none transition focus:border-zinc-400"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >

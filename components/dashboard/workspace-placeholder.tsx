@@ -6,17 +6,17 @@ import { buttonVariants } from "@/components/ui/button";
 export function WorkspacePlaceholder({ title }: { title: string }) {
   return (
     <div className="mx-auto max-w-7xl">
-      <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+      <section className="rounded-lg border border-white/10 bg-[#050810] p-6 shadow-sm">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="flex items-center gap-2 text-sm font-medium text-zinc-500">
-              <Sparkles className="size-4 text-zinc-950" />
+            <p className="flex items-center gap-2 text-sm font-medium text-zinc-400">
+              <Sparkles className="size-4 text-white" />
               Espaco de Inteligencia de Produto
             </p>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-950">
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white">
               {title}
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
               Esta area ja esta conectada a navegacao e pronta para a proxima
               etapa do MVP.
             </p>

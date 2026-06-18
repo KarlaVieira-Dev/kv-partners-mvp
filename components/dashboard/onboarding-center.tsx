@@ -132,22 +132,22 @@ export function OnboardingCenter() {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
-      <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-medium text-zinc-500">
+            <p className="text-sm font-medium text-zinc-400">
               Onboarding de Contas
             </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               Centro de Onboarding
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
               Monitore progresso, prazos, risco e a próxima ação necessária
               para cada conta em onboarding.
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
-            <CalendarClock className="size-4 text-zinc-950" />
+          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0c1120] px-3 py-2 text-sm text-zinc-400">
+            <CalendarClock className="size-4 text-white" />
             {isLoading ? "Carregando onboardings" : `${filteredOnboardings.length} registros`}
           </div>
         </div>
@@ -156,7 +156,7 @@ export function OnboardingCenter() {
       <KPIGrid isLoading={isLoading} metrics={metrics} />
 
       <FilterBar>
-          <div className="flex min-w-0 flex-1 items-center rounded-lg border border-zinc-200 bg-zinc-50 px-3">
+          <div className="flex min-w-0 flex-1 items-center rounded-lg border border-white/10 bg-[#0c1120] px-3">
             <Search className="size-4 text-zinc-400" />
             <select
               aria-label="Filtrar por conta"
@@ -191,7 +191,7 @@ export function OnboardingCenter() {
       <DataTable
         columns={[
           {
-            className: "font-medium text-zinc-950",
+            className: "font-medium text-white",
             header: "Conta",
             render: (onboarding) => onboarding.account,
           },
@@ -205,9 +205,9 @@ export function OnboardingCenter() {
             header: "Progresso",
             render: (onboarding) => (
               <div className="flex items-center gap-2">
-                <div className="h-2 w-20 overflow-hidden rounded-full bg-zinc-100">
+                <div className="h-2 w-20 overflow-hidden rounded-full bg-[#111827]">
                   <div
-                    className="h-full rounded-full bg-zinc-950"
+                    className="h-full rounded-full bg-[#2563eb]"
                     style={{ width: `${onboarding.progress}%` }}
                   />
                 </div>
@@ -281,10 +281,10 @@ function FilterSelect({
   value: string;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-xs font-medium text-zinc-500">
+    <label className="flex flex-col gap-1 text-xs font-medium text-zinc-400">
       {label}
       <select
-        className="h-10 rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm font-normal text-zinc-900 outline-none transition focus:border-zinc-400"
+        className="h-10 rounded-lg border border-white/10 bg-[#0c1120] px-3 text-sm font-normal text-zinc-900 outline-none transition focus:border-zinc-400"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >

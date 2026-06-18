@@ -490,22 +490,22 @@ export function ExecutiveCenter() {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-5">
-      <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-medium text-zinc-500">
+            <p className="text-sm font-medium text-zinc-400">
               KV Partners | Centro de Decisão
             </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               Quais decisões precisam ser tomadas agora?
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
               Uma jornada executiva para entender o problema, escolher a ação,
               antecipar impacto, observar sinais e avaliar a saúde do ecossistema.
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
-            <Sparkles className="size-4 text-zinc-950" />
+          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0c1120] px-3 py-2 text-sm text-zinc-400">
+            <Sparkles className="size-4 text-white" />
             {source === "google-sheets" ? "Google Sheets ativo" : "Planilha pronta"}
           </div>
         </div>
@@ -583,7 +583,7 @@ function ImpactPill({ impact }: { impact: AttentionSignal["impact"] }) {
 
 function EmptyState() {
   return (
-    <p className="text-sm leading-6 text-zinc-500">
+    <p className="text-sm leading-6 text-zinc-400">
       Sem dados suficientes nas fontes atuais.
     </p>
   );
@@ -599,11 +599,11 @@ function NarrativeBlock({
   title: string;
 }) {
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+    <section className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
         {eyebrow}
       </p>
-      <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">
+      <h2 className="mt-2 text-xl font-semibold tracking-tight text-white">
         {title}
       </h2>
       <div className="mt-4">{children}</div>
@@ -628,13 +628,13 @@ function DecisionStoryBlock({
       ) : priorityAccount ? (
         <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr] lg:items-stretch">
           <div className="rounded-lg border border-red-100 bg-red-50/60 p-4">
-            <p className="text-lg font-semibold leading-7 text-zinc-950">
+            <p className="text-lg font-semibold leading-7 text-white">
               {priorityAccount.accountName} apresenta{" "}
               {priorityAccount.mainReason.toLowerCase()}.
             </p>
             <p className="mt-3 text-sm leading-6 text-zinc-700">
               Isso elevou o Índice de Risco para{" "}
-              <strong className="font-semibold text-zinc-950">
+              <strong className="font-semibold text-white">
                 {priorityAccount.riskScore} ({priorityAccount.riskLevel})
               </strong>
               .
@@ -643,17 +643,17 @@ function DecisionStoryBlock({
               Impacto potencial: retenção, adoção e geração de valor.
             </p>
           </div>
-          <div className="flex flex-col justify-between rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+          <div className="flex flex-col justify-between rounded-lg border border-zinc-100 bg-[#0c1120] p-4">
             <div>
-              <p className="text-sm font-medium text-zinc-500">
+              <p className="text-sm font-medium text-zinc-400">
                 Ação sugerida
               </p>
-              <p className="mt-2 text-sm font-semibold leading-6 text-zinc-950">
+              <p className="mt-2 text-sm font-semibold leading-6 text-white">
                 {priorityAccount.suggestedAction ||
                   "Atuar sobre o principal vetor de risco identificado."}
               </p>
             </div>
-            <p className="mt-4 text-xs font-medium text-zinc-500">
+            <p className="mt-4 text-xs font-medium text-zinc-400">
               Fonte oficial: 07_IOI_Scores
             </p>
           </div>
@@ -683,22 +683,22 @@ function ActionsStoryBlock({
         <div className="grid gap-3 lg:grid-cols-3">
           {actions.map((action, index) => (
             <article
-              className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+              className="rounded-lg border border-zinc-100 bg-[#0c1120] p-4"
               key={action.title}
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="text-lg font-semibold text-zinc-950">
+                <span className="text-lg font-semibold text-white">
                   {index + 1}
                 </span>
                 <StatusPill status={action.status} />
               </div>
-              <p className="mt-3 text-sm font-semibold leading-6 text-zinc-950">
+              <p className="mt-3 text-sm font-semibold leading-6 text-white">
                 {action.title}
               </p>
-              <p className="mt-2 text-sm leading-5 text-zinc-600">
+              <p className="mt-2 text-sm leading-5 text-zinc-400">
                 Motivo: {action.reason}
               </p>
-              <p className="mt-2 text-xs font-medium text-zinc-500">
+              <p className="mt-2 text-xs font-medium text-zinc-400">
                 Responsável: {action.owner}
               </p>
             </article>
@@ -729,21 +729,21 @@ function OutcomesStoryBlock({
         <EmptyState />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-          <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-4">
-            <p className="text-sm font-medium text-zinc-500">
+          <div className="rounded-lg border border-zinc-100 bg-[#0c1120] p-4">
+            <p className="text-sm font-medium text-zinc-400">
               Ação principal
             </p>
-            <p className="mt-2 text-lg font-semibold leading-7 text-zinc-950">
+            <p className="mt-2 text-lg font-semibold leading-7 text-white">
               {mainAction.title}
             </p>
-            <p className="mt-2 text-sm leading-6 text-zinc-600">
+            <p className="mt-2 text-sm leading-6 text-zinc-400">
               Impacto esperado: {mainAction.impact}.
             </p>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {outcomes.map((outcome) => (
               <div
-                className="flex items-start gap-3 rounded-lg border border-zinc-100 bg-white p-3"
+                className="flex items-start gap-3 rounded-lg border border-zinc-100 bg-[#050810] p-3"
                 key={outcome.description}
               >
                 <StatusDot status={outcome.tone} />
@@ -777,7 +777,7 @@ function AttentionStoryBlock({
         <div className="grid gap-3 lg:grid-cols-3">
           {signals.map((signal) => (
             <article
-              className="rounded-lg border border-zinc-100 bg-zinc-50 p-4"
+              className="rounded-lg border border-zinc-100 bg-[#0c1120] p-4"
               key={signal.message}
             >
               <div className="flex items-center justify-between gap-3">
@@ -821,17 +821,17 @@ function EcosystemHealthBlock({
         <div className="grid gap-3 md:grid-cols-5">
           {items.map((item) => (
             <article
-              className="rounded-lg border border-zinc-100 bg-zinc-50 p-3"
+              className="rounded-lg border border-zinc-100 bg-[#0c1120] p-3"
               key={item.area}
             >
               <div className="flex items-center justify-between gap-3">
                 <StatusDot status={item.status} />
                 <StatusPill status={item.status} />
               </div>
-              <p className="mt-3 text-sm font-semibold text-zinc-950">
+              <p className="mt-3 text-sm font-semibold text-white">
                 {item.area}
               </p>
-              <p className="mt-2 text-xs leading-5 text-zinc-600">
+              <p className="mt-2 text-xs leading-5 text-zinc-400">
                 {item.reason}
               </p>
             </article>

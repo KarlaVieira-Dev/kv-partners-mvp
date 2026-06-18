@@ -24,22 +24,22 @@ export function KPIGrid({
     <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {metrics.slice(0, 4).map((metric) => (
         <article
-          className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm"
+          className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm"
           key={metric.label}
         >
           <div className="flex items-start justify-between gap-3">
-            <p className="text-sm font-medium text-zinc-500">{metric.label}</p>
+            <p className="text-sm font-medium text-zinc-400">{metric.label}</p>
             {metric.trend ? (
-              <span className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
+              <span className="rounded-md bg-[#111827] px-2 py-1 text-xs font-medium text-zinc-700">
                 {metric.trend}
               </span>
             ) : null}
           </div>
-          <p className="mt-4 text-3xl font-semibold tracking-tight text-zinc-950">
+          <p className="mt-4 text-3xl font-semibold tracking-tight text-white">
             {isLoading ? "..." : metric.value}
           </p>
           {metric.detail ? (
-            <p className="mt-2 text-sm text-zinc-500">{metric.detail}</p>
+            <p className="mt-2 text-sm text-zinc-400">{metric.detail}</p>
           ) : null}
         </article>
       ))}
@@ -49,7 +49,7 @@ export function KPIGrid({
 
 export function FilterBar({ children }: { children: ReactNode }) {
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+    <section className="rounded-lg border border-white/10 bg-[#050810] p-4 shadow-sm">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         {children}
       </div>
@@ -81,9 +81,9 @@ export function DataTable<T>({
   title: string;
 }) {
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white shadow-sm">
-      <div className="border-b border-zinc-200 px-5 py-4">
-        <h2 className="text-base font-semibold text-zinc-950">{title}</h2>
+    <section className="rounded-lg border border-white/10 bg-[#050810] shadow-sm">
+      <div className="border-b border-white/10 px-5 py-4">
+        <h2 className="text-base font-semibold text-white">{title}</h2>
       </div>
       <div className="overflow-x-auto">
         <table
@@ -91,7 +91,7 @@ export function DataTable<T>({
           style={{ minWidth }}
         >
           <thead>
-            <tr className="border-b border-zinc-200 bg-zinc-50 text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
+            <tr className="border-b border-white/10 bg-[#0c1120] text-xs font-medium uppercase tracking-[0.12em] text-zinc-400">
               {columns.map((column) => (
                 <th className="px-5 py-3" key={column.header}>
                   {column.header}
@@ -102,7 +102,7 @@ export function DataTable<T>({
           <tbody className="divide-y divide-zinc-100">
             {rows.map((row, index) => (
               <tr
-                className="align-top text-sm text-zinc-600"
+                className="align-top text-sm text-zinc-400"
                 key={getRowKey(row, index)}
               >
                 {columns.map((column) => (
@@ -119,7 +119,7 @@ export function DataTable<T>({
         </table>
       </div>
       {!isLoading && rows.length === 0 ? (
-        <div className="border-t border-zinc-100 px-5 py-10 text-center text-sm text-zinc-500">
+        <div className="border-t border-zinc-100 px-5 py-10 text-center text-sm text-zinc-400">
           {emptyMessage}
         </div>
       ) : null}
@@ -142,7 +142,7 @@ export function Pagination({
   const normalizedPage = Math.min(currentPage, totalPages);
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-600 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-[#050810] px-4 py-3 text-sm text-zinc-400 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <span>
         Página {normalizedPage} de {totalPages}
       </span>
@@ -184,13 +184,13 @@ export function IntelligentSummary({
   title?: string;
 }) {
   return (
-    <section className="rounded-lg border border-zinc-200 bg-zinc-950 p-5 text-white shadow-sm">
+    <section className="rounded-lg border border-white/10 bg-[#2563eb] p-5 text-white shadow-sm">
       <h2 className="text-base font-semibold">{title}</h2>
       {meta ? (
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {meta.map((item) => (
             <div
-              className="rounded-lg border border-white/10 bg-white/[0.06] p-3"
+              className="rounded-lg border border-white/10 bg-[#050810]/[0.06] p-3"
               key={item.label}
             >
               <p className="text-xs text-zinc-400">{item.label}</p>
@@ -202,7 +202,7 @@ export function IntelligentSummary({
       <div className="mt-5 grid gap-3 lg:grid-cols-3">
         {items.map((item) => (
           <p
-            className="rounded-lg border border-white/10 bg-white/[0.06] p-3 text-sm leading-6 text-zinc-200"
+            className="rounded-lg border border-white/10 bg-[#050810]/[0.06] p-3 text-sm leading-6 text-zinc-200"
             key={item}
           >
             {item}
