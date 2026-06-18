@@ -53,14 +53,14 @@ const badgeColor = (value: string) => {
     .toLowerCase();
 
   if (normalized.includes("critica") || normalized.includes("negativo")) {
-    return "bg-rose-50 text-rose-700";
+    return "bg-rose-950/40 text-rose-400 border border-rose-500/20";
   }
 
   if (normalized.includes("alta") || normalized.includes("neutro")) {
-    return "bg-amber-50 text-amber-700";
+    return "bg-amber-950/40 text-amber-400 border border-amber-500/20";
   }
 
-  return "bg-emerald-50 text-emerald-700";
+  return "bg-emerald-950/40 text-emerald-400 border border-emerald-500/20";
 };
 
 export function FeedbackCenter() {
@@ -235,10 +235,10 @@ export function FeedbackCenter() {
           <div className="mt-4 space-y-2">
             {recurringThemes.map(([theme, count]) => (
               <div
-                className="flex items-center justify-between rounded-lg border border-zinc-100 bg-[#0c1120] px-3 py-2"
+                className="flex items-center justify-between rounded-lg border border-white/10 bg-[#0c1120] px-3 py-2"
                 key={theme}
               >
-                <span className="text-sm font-medium text-zinc-700">
+                <span className="text-sm font-medium text-zinc-300">
                   {theme}
                 </span>
                 <span className="text-sm text-zinc-400">{count}</span>
@@ -253,7 +253,7 @@ export function FeedbackCenter() {
             <Search className="size-4 text-zinc-400" />
             <select
               aria-label="Filtrar por conta"
-              className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm text-zinc-900 outline-none"
+              className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none"
               onChange={(event) => setAccount(event.target.value)}
               value={account}
             >
@@ -370,7 +370,7 @@ function DistributionCard({
       <p className="text-sm font-medium text-zinc-400">{title}</p>
       <div className="mt-4 grid grid-cols-3 gap-3">
         {items.map((item) => (
-          <div className="rounded-lg border border-zinc-100 bg-[#0c1120] p-3" key={item.label}>
+          <div className="rounded-lg border border-white/10 bg-[#0c1120] p-3" key={item.label}>
             <p className="text-xs text-zinc-400">{item.label}</p>
             <p className="mt-1 text-2xl font-semibold text-white">
               {item.value}
@@ -397,7 +397,7 @@ function FilterSelect({
     <label className="flex flex-col gap-1 text-xs font-medium text-zinc-400">
       {label}
       <select
-        className="h-10 rounded-lg border border-white/10 bg-[#0c1120] px-3 text-sm font-normal text-zinc-900 outline-none transition focus:border-zinc-400"
+        className="h-10 rounded-lg border border-white/10 bg-[#0c1120] px-3 text-sm font-normal text-white outline-none transition focus:border-zinc-500"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
