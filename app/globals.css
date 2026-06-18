@@ -92,4 +92,19 @@
   html {
     @apply font-sans;
   }
+}/* Scrollbar dark theme */
+::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #050810;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e2a45;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2d3f63;
+}\git add app/globals.css
 }
