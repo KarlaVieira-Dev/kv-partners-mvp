@@ -753,7 +753,7 @@ export function AICopilotCenter() {
             <div className="flex min-w-0 flex-1 items-center rounded-lg border border-white/10 bg-[#0c1120] px-3">
               <Search className="size-4 text-zinc-400" />
               <input
-                className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
+                className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-zinc-400"
                 id="question"
                 onChange={(event) => setQuestion(event.target.value)}
                 placeholder="Onde devemos investir nos próximos 90 dias?"
@@ -767,7 +767,7 @@ export function AICopilotCenter() {
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {quickQuestions.map((quickQuestion) => (
           <button
-            className="rounded-lg border border-white/10 bg-[#050810] p-4 text-left text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-[#0c1120]"
+            className="rounded-lg border border-white/10 bg-[#050810] p-4 text-left text-sm font-medium text-zinc-300 shadow-sm transition hover:border-white/20 hover:bg-[#0c1120]"
             key={quickQuestion}
             onClick={() => handleQuickQuestionClick(quickQuestion)}
             type="button"
@@ -779,11 +779,11 @@ export function AICopilotCenter() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-        <div className="rounded-lg border border-white/10 bg-[#2563eb] p-5 text-white shadow-sm">
+        <div className="rounded-lg border border-white/10 bg-[#050810] p-5 shadow-sm">
           <p className="text-sm font-medium text-zinc-400">
             Resposta executiva
           </p>
-          <p className="mt-4 text-xl font-semibold leading-8">
+          <p className="mt-4 text-xl font-semibold leading-8 text-white">
             {isLoading ? "Carregando dados reais..." : answer.summary}
           </p>
         </div>
@@ -796,7 +796,7 @@ export function AICopilotCenter() {
             {(answer.accounts.length > 0 ? answer.accounts : ["Sem contas"]).map(
               (account, index) => (
                 <span
-                  className="rounded-md bg-[#111827] px-2.5 py-1 text-xs font-medium text-zinc-700"
+                  className="rounded-md bg-[#111827] px-2.5 py-1 text-xs font-medium text-zinc-300"
                   key={`${account}-${index}`}
                 >
                   {account}
@@ -875,7 +875,7 @@ function ExecutiveBriefingPanel({
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         {items.map((item) => (
           <div
-            className="rounded-lg border border-zinc-100 bg-[#0c1120] p-3"
+            className="rounded-lg border border-white/10 bg-[#0c1120] p-3"
             key={item.label}
           >
             <p className="text-xs text-zinc-400">{item.label}</p>
@@ -895,7 +895,7 @@ function AnswerList({ items, title }: { items: string[]; title: string }) {
       <div className="border-b border-white/10 px-5 py-4">
         <h2 className="text-base font-semibold text-white">{title}</h2>
       </div>
-      <div className="divide-y divide-zinc-100">
+      <div className="divide-y divide-white/5">
         {(items.length > 0 ? items : ["Nenhum dado encontrado."]).map(
           (item, index) => (
             <p className="px-5 py-4 text-sm leading-6 text-zinc-400" key={index}>
