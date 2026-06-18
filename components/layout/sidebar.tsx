@@ -29,22 +29,23 @@ export function Sidebar() {
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-white/10 bg-[#050810]/90 px-4 py-5 backdrop-blur-xl lg:block">
       <div className="flex h-full flex-col">
         <div className="mb-8 flex items-center gap-3 px-2">
-          <div
-            className="flex size-9 items-center justify-center rounded-lg flex-shrink-0"
-            style={{ background: "linear-gradient(135deg, #1d4ed8, #7c3aed)" }}
-          >
-            <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
-              <path
-                d="M4 14C4 14 8 7 14 7C20 7 24 14 24 14C24 14 20 21 14 21C8 21 4 14 4 14Z"
-                stroke="white"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <circle cx="14" cy="14" r="3.5" stroke="white" strokeWidth="1.8" />
-              <circle cx="14" cy="14" r="1.2" fill="white" />
-            </svg>
-          </div>
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style={{ flexShrink: 0 }}>
+            <defs>
+              <linearGradient id="eyeGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#60a5fa" />
+                <stop offset="100%" stopColor="#a78bfa" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M4 14C4 14 8 7 14 7C20 7 24 14 24 14C24 14 20 21 14 21C8 21 4 14 4 14Z"
+              stroke="url(#eyeGrad)"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle cx="14" cy="14" r="3.5" stroke="url(#eyeGrad)" strokeWidth="1.8" />
+            <circle cx="14" cy="14" r="1.2" fill="url(#eyeGrad)" />
+          </svg>
           <div>
             <p className="text-sm font-semibold text-white">KV Partners</p>
             <p className="text-xs italic" style={{ color: "#a78bfa" }}>
@@ -61,8 +62,8 @@ export function Sidebar() {
                 className={cn(
                   "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition",
                   active
-                    ? "bg-[#2563eb] text-white shadow-sm"
-                    : "text-zinc-400 hover:bg-[#111827] hover:text-white",
+                    ? "border-l-2 border-blue-400 bg-white/5 text-white"
+                    : "text-zinc-400 hover:bg-white/5 hover:text-white",
                 )}
                 href={item.href}
                 key={item.label}
