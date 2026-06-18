@@ -39,30 +39,30 @@ const riskColor = (level: string) => {
   const normalizedLevel = normalize(level);
 
   if (normalizedLevel.includes("crit")) {
-    return "bg-red-50 text-red-700";
+    return "bg-red-950/40 text-red-400 border border-red-500/20";
   }
 
   if (normalizedLevel.includes("alto")) {
-    return "bg-rose-50 text-rose-700";
+    return "bg-rose-950/40 text-rose-400 border border-rose-500/20";
   }
 
   if (normalizedLevel.includes("medio") || normalizedLevel.includes("médio")) {
-    return "bg-amber-50 text-amber-700";
+    return "bg-amber-950/40 text-amber-400 border border-amber-500/20";
   }
 
-  return "bg-emerald-50 text-emerald-700";
+  return "bg-emerald-950/40 text-emerald-400 border border-emerald-500/20";
 };
 
 const scoreColor = (score: number) => {
   if (score >= 80) {
-    return "bg-emerald-50 text-emerald-700";
+    return "bg-emerald-950/40 text-emerald-400 border border-emerald-500/20";
   }
 
   if (score >= 60) {
-    return "bg-amber-50 text-amber-700";
+    return "bg-amber-950/40 text-amber-400 border border-amber-500/20";
   }
 
-  return "bg-rose-50 text-rose-700";
+  return "bg-rose-950/40 text-rose-400 border border-rose-500/20";
 };
 
 export function RiskCenter() {
@@ -250,7 +250,7 @@ export function RiskCenter() {
         <div className="mt-5 grid gap-3 md:grid-cols-4">
           {riskVectors.map((vector, index) => (
             <article
-              className="rounded-lg border border-zinc-100 bg-[#0c1120] p-4"
+              className="rounded-lg border border-white/10 bg-[#0c1120] p-4"
               key={vector.label}
             >
               <p className="text-xs font-medium text-zinc-400">
@@ -263,7 +263,7 @@ export function RiskCenter() {
                 contas abaixo de 70 no vetor
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <span className="rounded-md bg-[#111827] px-2 py-1 text-xs font-medium text-zinc-700">
+                <span className="rounded-md bg-[#111827] px-2 py-1 text-xs font-medium text-zinc-400">
                   Severidade {vector.severity}
                 </span>
                 <span
@@ -292,10 +292,10 @@ export function RiskCenter() {
             {priorityAccount?.mainReason ?? "Sem dados de risco carregados."}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-md bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700">
+            <span className="rounded-md bg-rose-950/40 px-2 py-1 text-xs font-medium text-rose-400 border border-rose-500/20">
               Índice de Risco {priorityAccount?.riskScore ?? 0}
             </span>
-            <span className="rounded-md bg-[#111827] px-2 py-1 text-xs font-medium text-zinc-700">
+            <span className="rounded-md bg-[#111827] px-2 py-1 text-xs font-medium text-zinc-400">
               {priorityAccount?.riskLevel ?? "Sem nível"}
             </span>
           </div>
@@ -307,7 +307,7 @@ export function RiskCenter() {
           </p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {riskDistribution.map((item) => (
-              <div className="rounded-lg border border-zinc-100 bg-[#0c1120] p-3" key={item.label}>
+              <div className="rounded-lg border border-white/10 bg-[#0c1120] p-3" key={item.label}>
                 <p className="text-xs text-zinc-400">{item.label}</p>
                 <p className="mt-1 text-2xl font-semibold text-white">
                   {item.value}
@@ -378,7 +378,7 @@ export function RiskCenter() {
           {
             header: "Índice de Risco",
             render: (risk) => (
-              <span className="rounded-md bg-[#111827] px-2 py-1 text-xs font-medium text-zinc-700">
+              <span className="rounded-md bg-[#111827] px-2 py-1 text-xs font-medium text-zinc-400">
                 {risk.riskScore}
               </span>
             ),
@@ -466,7 +466,7 @@ function FilterSelect({
     <label className="flex flex-col gap-1 text-xs font-medium text-zinc-400">
       {label}
       <select
-        className="h-10 rounded-lg border border-white/10 bg-[#0c1120] px-3 text-sm font-normal text-zinc-900 outline-none transition focus:border-zinc-400"
+        className="h-10 rounded-lg border border-white/10 bg-[#0c1120] px-3 text-sm font-normal text-white outline-none transition focus:border-zinc-500"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
