@@ -143,7 +143,7 @@ export function AccountsCenter() {
           className={cn(
             "h-10 rounded-lg border px-3 text-sm font-medium transition",
             sortByOpportunity
-              ? "border-blue-500/30 bg-[#2563eb] text-white"
+              ? "border-blue-400/50 bg-white/5 text-white"
               : "border-white/10 bg-[#0c1120] text-zinc-400 hover:bg-[#111827] hover:text-white",
           )}
           onClick={() => setSortByOpportunity((current) => !current)}
