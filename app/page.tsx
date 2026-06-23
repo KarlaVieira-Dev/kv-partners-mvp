@@ -21,7 +21,7 @@ export default function HomePage() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-          <Link href="/dashboard" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Módulos</Link>
+          <Link href="/executive-center" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Módulos</Link>
           <Link href="/pipeline"  style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Pipeline</Link>
           <a
             href="https://kv-partner-hub.lovable.app"
@@ -31,7 +31,7 @@ export default function HomePage() {
           >
             Portal
           </a>
-          <Link href="/dashboard" style={{
+          <Link href="/executive-center" style={{
             background: '#6366f1', color: '#fff', padding: '8px 20px',
             borderRadius: 8, fontSize: 13, fontWeight: 500, textDecoration: 'none',
           }}>
@@ -68,7 +68,7 @@ export default function HomePage() {
         </p>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <Link href="/dashboard" style={{
+          <Link href="/executive-center" style={{
             background: '#6366f1', color: '#fff', padding: '12px 28px',
             borderRadius: 8, fontSize: 14, fontWeight: 500, textDecoration: 'none',
           }}>
