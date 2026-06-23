@@ -175,7 +175,7 @@ export default function HomePage() {
           </p>
         </div>
         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>
-          "Os sinais aparecem antes dos problemas."
+          &ldquo;Os sinais aparecem antes dos problemas.&rdquo;
         </p>
       </footer>
 
