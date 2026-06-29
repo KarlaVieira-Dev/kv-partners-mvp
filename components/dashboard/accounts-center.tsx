@@ -95,7 +95,7 @@ export function AccountsCenter() {
       { detail: "Base lida da aba 01_Contas", label: "Total de contas", value: accounts.length },
       { detail: "Tipo de conta gestora", label: "Contas Gestoras", value: accounts.filter((a) => isManagerAccount(a.type)).length },
       { detail: "Tipo de conta gerenciada", label: "Contas Gerenciadas", value: accounts.filter((a) => isManagedAccount(a.type)).length },
-      { detail: "Média do health_score", label: "Índice de Saúde médio", value: average(accounts.map((a) => a.healthScore)) },
+      { detail: "Média do IOI Score", label: "IOI Score médio", value: average(accounts.map((a) => a.healthScore)) },
     ],
     [accounts],
   );
@@ -127,117 +127,4 @@ export function AccountsCenter() {
           <Search className="size-4 text-zinc-400" />
           <input
             aria-label="Filtrar contas por nome"
-            className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-zinc-500"
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar contas..."
-            type="search"
-            value={search}
-          />
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3 lg:w-[520px]">
-          <FilterSelect label="Tipo" onChange={setType} options={filterOptions.types} value={type} />
-          <FilterSelect label="Segmento" onChange={setSegment} options={filterOptions.segments} value={segment} />
-          <FilterSelect label="Status" onChange={setStatus} options={filterOptions.statuses} value={status} />
-        </div>
-        <button
-          className={cn(
-            "h-10 rounded-lg border px-3 text-sm font-medium transition",
-            sortByOpportunity
-              ? "border-blue-400/50 bg-white/5 text-white"
-              : "border-white/10 bg-[#0c1120] text-zinc-400 hover:bg-[#111827] hover:text-white",
-          )}
-          onClick={() => setSortByOpportunity((current) => !current)}
-          type="button"
-        >
-          Potencial de Expansão ↓
-        </button>
-      </FilterBar>
-
-      <DataTable
-        columns={[
-          { className: "font-medium text-white", header: "Conta", render: (account) => account.account },
-          { header: "Tipo", render: (account) => account.type },
-          { header: "Segmento", render: (account) => account.segment },
-          { header: "Porte", render: (account) => account.size },
-          { header: "Status", render: (account) => account.status },
-          {
-            header: "Índice de Saúde",
-            render: (account) => (
-              <span className={cn("rounded-md px-2 py-1 text-xs font-medium", scoreColor(account.healthScore))}>
-                {account.healthScore}
-              </span>
-            ),
-          },
-          {
-            header: "Índice de Risco",
-            render: (account) => (
-              <span className={cn("rounded-md px-2 py-1 text-xs font-medium", riskColor(account.riskScore))}>
-                {account.riskScore}
-              </span>
-            ),
-          },
-          {
-            header: "Potencial de Expansão",
-            render: (account) => (
-              <span className="rounded-md border border-white/10 bg-[#111827] px-2 py-1 text-xs font-medium text-zinc-400">
-                {opportunityScore(account.healthScore, account.riskScore)}
-              </span>
-            ),
-          },
-          { header: "Plano", render: (account) => account.plan },
-          { header: "Cidade", render: (account) => account.city },
-          { header: "Estado", render: (account) => account.state },
-        ]}
-        emptyMessage="Nenhuma conta corresponde aos filtros selecionados."
-        getRowKey={(account) => account.account}
-        isLoading={isLoading}
-        minWidth="1240px"
-        rows={paginatedRows}
-        title="Contas"
-      />
-
-      <Pagination currentPage={page} onPageChange={setPage} totalItems={filteredAccounts.length} />
-
-      <IntelligentSummary
-        items={[
-          "Contas gestoras concentram a visão executiva do ecossistema.",
-          "Contas com Índice de Saúde mais baixo devem ser acompanhadas junto ao Centro de Riscos.",
-          "Segmento, plano e localização ajudam a priorizar a estratégia de relacionamento.",
-        ]}
-        meta={[
-          { label: "Contas filtradas", value: filteredAccounts.length },
-          { label: "Base total", value: accounts.length },
-        ]}
-      />
-    </div>
-  );
-}
-
-function FilterSelect({
-  label,
-  onChange,
-  options,
-  value,
-}: {
-  label: string;
-  onChange: (value: string) => void;
-  options: string[];
-  value: string;
-}) {
-  return (
-    <label className="flex flex-col gap-1 text-xs font-medium text-zinc-400">
-      {label}
-      <select
-        className="h-10 rounded-lg border border-white/10 bg-[#0c1120] px-3 text-sm font-normal text-white outline-none transition focus:border-zinc-500"
-        onChange={(event) => onChange(event.target.value)}
-        value={value}
-      >
-        {options.map((option) => (
-          <option key={option} value={option} style={{ background: "#0c1120" }}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
+            className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none
